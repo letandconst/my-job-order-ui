@@ -1,0 +1,45 @@
+:root {
+	--nav-hover-bg: var(--mantine-color-blue-0);
+	--nav-hover-color: var(--mantine-color-blue-7);
+	--nav-active-bg: var(--mantine-color-blue-2);
+	--nav-active-color: var(--mantine-color-blue-9);
+}
+
+/* Dark mode overrides */
+:global(.dark) {
+	--nav-hover-bg: var(--mantine-color-blue-9);
+	--nav-hover-color: var(--mantine-color-blue-3);
+	--nav-active-bg: var(--mantine-color-blue-8);
+	--nav-active-color: var(--mantine-color-blue-2);
+}
+
+.navlink_custom {
+	border-radius: var(--mantine-radius-sm);
+	transition: background-color 160ms ease, color 160ms ease, font-weight 160ms ease;
+	color: var(--mantine-color-text);
+	font-weight: 400;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 0.75rem;
+}
+
+/* make icons follow text color */
+.navlink_custom svg,
+.navlink_custom > * svg {
+	color: inherit;
+}
+
+/* Hover (non-active) */
+.navlink_custom:hover:not([data-active]) {
+	background-color: var(--nav-hover-bg);
+	color: var(--nav-hover-color);
+	font-weight: 500;
+}
+
+/* Active */
+.navlink_custom[data-active] {
+	background-color: var(--nav-active-bg);
+	color: var(--nav-active-color);
+	font-weight: 500;
+}
