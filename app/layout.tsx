@@ -4,6 +4,8 @@ import Providers from './providers';
 import { Poppins } from 'next/font/google';
 import '@mantine/core/styles.css';
 
+import { AppWrapper } from '@/components/AppWrapper';
+
 const poppins = Poppins({
 	subsets: ['latin'],
 	weight: ['400', '500', '600', '700'],
@@ -22,7 +24,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 			className={poppins.className}
 		>
 			<body>
-				<Providers>{children}</Providers>
+				<Providers>
+					<AppWrapper>{children}</AppWrapper>
+				</Providers>
 			</body>
 		</html>
 	);

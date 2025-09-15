@@ -12,6 +12,9 @@ export default function Providers({ children }: { children: ReactNode }) {
 			<MantineProvider
 				withGlobalClasses
 				defaultColorScheme='light'
+				theme={{
+					fontFamily: 'Poppins, sans-serif',
+				}}
 			>
 				<Notifications
 					autoClose={2000}
