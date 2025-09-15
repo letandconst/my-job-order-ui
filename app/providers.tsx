@@ -13,7 +13,20 @@ export default function Providers({ children }: { children: ReactNode }) {
 				withGlobalClasses
 				defaultColorScheme='light'
 			>
-				<Notifications position='top-right' />
+				<Notifications
+					autoClose={2000}
+					position='top-center'
+					zIndex={9999}
+					styles={{
+						root: {
+							maxWidth: 400,
+							width: '100%',
+							right: '0',
+							position: 'absolute',
+							top: '2%',
+						},
+					}}
+				/>
 				{children}
 			</MantineProvider>
 		</ApolloProvider>

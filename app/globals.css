@@ -14,3 +14,19 @@ body {
 	padding: 0;
 	margin: 0;
 }
+
+input,
+button,
+textarea,
+select {
+	font: inherit;
+}
+
+button,
+select {
+	text-transform: none;
+}
+
+a {
+	text-decoration: none;
+}

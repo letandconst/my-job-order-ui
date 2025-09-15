@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import Providers from './providers';
 import { Poppins } from 'next/font/google';
+import '@mantine/core/styles.css';
 
 const poppins = Poppins({
 	subsets: ['latin'],
