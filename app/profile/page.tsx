@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Box, Grid, Avatar, Button, TextInput, PasswordInput, SimpleGrid, Group, ActionIcon, Title } from '@mantine/core';
+import { Box, Grid, Avatar, Button, TextInput, PasswordInput, SimpleGrid, Group } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { User, useUser } from '@/context/UserContext';
 import { notify } from '@/utils/notifications';
@@ -9,7 +9,7 @@ import { useMutation } from '@apollo/client/react';
 import { UPDATE_PROFILE_MUTATION } from '@/graphql/mutations/auth';
 import { useCloudinaryUpload } from '@/hooks/useCloudinaryUpload';
 import { useRouter } from 'next/navigation';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { PageHeader } from '@/components/PageHeader/PageHeader';
 
 interface UpdateProfileResponse {
 	updateProfile: {
@@ -100,20 +100,7 @@ export default function ProfilePage() {
 				maxWidth: '1200px',
 			}}
 		>
-			<Group
-				mb='xl'
-				gap='sm'
-				align='center'
-			>
-				<ActionIcon
-					variant='light'
-					size='lg'
-					onClick={() => router.push('/')}
-				>
-					<IconArrowLeft size={20} />
-				</ActionIcon>
-				<Title order={2}>Edit Profile</Title>
-			</Group>
+			<PageHeader title='Edit Profile' />
 
 			<form onSubmit={form.onSubmit(handleSubmit)}>
 				<Grid grow>
@@ -150,7 +137,7 @@ export default function ProfilePage() {
 						</Button>
 						{user?.avatar || avatarPreview ? (
 							<Button
-								variant='subtle'
+								variant='outline'
 								color='red'
 								mt='sm'
 								w={240}
