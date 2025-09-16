@@ -1,31 +1,337 @@
-'use client';
-
-import { TextInput } from '@mantine/core';
-import { ModalMode } from '@/types/modal';
+import { useEffect, useRef, useState } from 'react';
+import { TextInput, Textarea, Stack, Grid, Group, Badge, Text, Avatar, ActionIcon, rem } from '@mantine/core';
+import { TagsInput } from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { useMutation } from '@apollo/client/react';
+import { CREATE_MECHANIC, UPDATE_MECHANIC } from '@/graphql/mutations/mechanic';
+import { CreateMechanicResponse, Mechanic, UpdateMechanicResponse } from '@/types/mechanic';
+import { IconPencil } from '@tabler/icons-react';
+import { useCloudinaryUpload } from '@/hooks/useCloudinaryUpload';
+import { notify } from '@/utils/notifications';
+import classes from './MechanicForm.module.css';
+import { toInputDate, toDisplayDate } from '@/utils/dateFormatter';
+import { LIST_MECHANICS } from '@/graphql/queries/mechanics';
 
 interface MechanicFormProps {
-	mode: ModalMode;
-	data?: any;
+	mode: 'create' | 'edit' | 'view';
+	data?: Mechanic;
+	onClose?: () => void;
+	onSubmittingChange?: (loading: boolean) => void;
 }
 
-export function MechanicForm({ mode, data }: MechanicFormProps) {
-	const isView = mode === 'view';
+export function MechanicForm({ mode, data, onClose, onSubmittingChange }: MechanicFormProps) {
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
+	const [avatarFile, setAvatarFile] = useState<File | null>(null);
+	const [avatarPreview, setAvatarPreview] = useState<string>(data?.avatar ?? '');
+	const { uploadFile } = useCloudinaryUpload();
+
+	const form = useForm({
+		initialValues: {
+			name: data?.name ?? '',
+			phoneNumber: data?.phoneNumber ?? '',
+			birthday: toInputDate(data?.birthday) ?? '',
+			address: data?.address ?? '',
+			emergencyContactName: data?.emergencyContact?.name ?? '',
+			emergencyContactPhone: data?.emergencyContact?.phoneNumber ?? '',
+			bio: data?.bio ?? '',
+			specialties: data?.specialties ?? [],
+			avatar: data?.avatar ?? '',
+			dateJoined: toInputDate(data?.dateJoined) ?? '',
+		},
+		validate: {
+			name: (val) => (val.trim().length < 2 ? 'Name must be at least 3 characters' : null),
+			phoneNumber: (val) => (val.trim().length < 7 ? 'Invalid phone number' : null),
+		},
+	});
+
+	const initials = form.values.name
+		? form.values.name
+				.split(' ')
+				.map((n) => n[0])
+				.join('')
+				.toUpperCase()
+		: '';
+
+	const [createMechanic] = useMutation<CreateMechanicResponse>(CREATE_MECHANIC, {
+		refetchQueries: [{ query: LIST_MECHANICS }],
+	});
+	const [updateMechanic] = useMutation<UpdateMechanicResponse>(UPDATE_MECHANIC, {
+		refetchQueries: [{ query: LIST_MECHANICS }],
+	});
+
+	useEffect(() => {
+		const handleFormSubmit = async () => {
+			if (!form.isValid()) return;
+
+			onSubmittingChange?.(true);
+
+			try {
+				const avatarUrl = await uploadAvatarIfNeeded();
+				if (mode === 'create') {
+					await handleCreate(avatarUrl);
+				} else if (mode === 'edit' && data?._id) {
+					await handleUpdate(avatarUrl);
+				}
+				onClose?.();
+			} catch (err) {
+				const message = err instanceof Error ? err.message : 'Unknown error';
+				notify('Error', `Something went wrong: ${message}`, 'red');
+				console.error(err);
+			} finally {
+				onSubmittingChange?.(false);
+			}
+		};
+
+		window.addEventListener('form-submit', handleFormSubmit);
+		return () => window.removeEventListener('form-submit', handleFormSubmit);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [form, mode, data, avatarFile, createMechanic, updateMechanic, onClose]);
+
+	// --- Helpers --- //
+	const uploadAvatarIfNeeded = async (): Promise<string> => {
+		if (!avatarFile) return form.values.avatar;
+		try {
+			const avatarUrl = await uploadFile(avatarFile, 'avatars');
+			if (!avatarUrl) throw new Error('Avatar upload failed');
+			return avatarUrl;
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : 'Unknown error';
+			notify('Error', `Avatar upload failed: ${message}`, 'red');
+			throw err;
+		}
+	};
+
+	// --- Helpers --- //
+
+	const handleCreate = async (avatarUrl: string) => {
+		const result = await createMechanic({
+			variables: { input: { ...form.values, avatar: avatarUrl } },
+		});
+		setTimeout(() => {
+			if (result.data?.createMechanic?.statusCode === 200) {
+				notify('Success', 'Mechanic created successfully', 'green');
+			} else {
+				notify('Error', result.data?.createMechanic?.message || 'Failed to create mechanic', 'red');
+			}
+		}, 1000);
+	};
+
+	const handleUpdate = async (avatarUrl: string) => {
+		const result = await updateMechanic({
+			variables: {
+				updateMechanicId: data!._id,
+				phoneNumber: form.values.phoneNumber,
+				address: form.values.address,
+				emergencyContactName: form.values.emergencyContactName,
+				emergencyContactPhone: form.values.emergencyContactPhone,
+				bio: form.values.bio,
+				avatar: avatarUrl,
+				specialties: form.values.specialties,
+			},
+		});
+		setTimeout(() => {
+			if (result.data?.updateMechanic?.statusCode === 200) {
+				notify('Success', 'Mechanic updated successfully', 'green');
+			} else {
+				notify('Error', result.data?.updateMechanic?.message || 'Failed to update mechanic', 'red');
+			}
+		});
+	};
 
 	return (
-		<>
-			<TextInput
-				label='Name'
-				placeholder='Client name'
-				mb='sm'
-				defaultValue={data?.name}
-				disabled={isView}
+		<Stack gap='md'>
+			{/* Avatar + Name */}
+			<Stack
+				align='center'
+				gap='md'
+			>
+				<div style={{ position: 'relative', display: 'inline-block' }}>
+					<Avatar
+						src={avatarPreview || form.values.avatar}
+						radius='xl'
+						size={80}
+						color='blue'
+					>
+						{initials}
+					</Avatar>
+
+					{(mode === 'edit' || mode === 'create') && (
+						<ActionIcon
+							variant='filled'
+							color='blue'
+							radius='xl'
+							size='lg'
+							style={{
+								position: 'absolute',
+								bottom: 0,
+								right: 0,
+								transform: 'translate(25%, 25%)',
+							}}
+							onClick={() => fileInputRef.current?.click()}
+						>
+							<IconPencil style={{ width: rem(16), height: rem(16) }} />
+						</ActionIcon>
+					)}
+
+					<input
+						ref={fileInputRef}
+						type='file'
+						hidden
+						accept='image/*'
+						onChange={(e) => {
+							if (e.target.files?.[0]) {
+								setAvatarFile(e.target.files[0]);
+								setAvatarPreview(URL.createObjectURL(e.target.files[0]));
+							}
+						}}
+					/>
+				</div>
+			</Stack>
+
+			{/* Details */}
+			<Grid>
+				{mode === 'view' ? (
+					<>
+						<Grid.Col span={6}>
+							<Text
+								fw={600}
+								size='lg'
+							>
+								{form.values.name}
+							</Text>
+						</Grid.Col>
+						<Grid.Col span={6}>
+							<Text
+								fw={600}
+								size='lg'
+							>
+								Joined: {toDisplayDate(form.values.dateJoined)}
+							</Text>
+						</Grid.Col>
+					</>
+				) : (
+					<>
+						<Grid.Col span={6}>
+							<TextInput
+								label='Name'
+								placeholder='Enter full name'
+								classNames={{ input: classes.input }}
+								disabled={mode !== 'create'}
+								{...form.getInputProps('name')}
+							/>
+						</Grid.Col>
+						<Grid.Col span={6}>
+							<TextInput
+								label='Date Joined'
+								type='date'
+								classNames={{ input: classes.input }}
+								disabled={mode !== 'create'}
+								{...form.getInputProps('dateJoined')}
+							/>
+						</Grid.Col>
+					</>
+				)}
+				<Grid.Col span={6}>
+					<TextInput
+						label='Phone Number'
+						placeholder='Enter phone number'
+						classNames={{ input: classes.input }}
+						disabled={mode !== 'edit' && mode !== 'create'}
+						{...form.getInputProps('phoneNumber')}
+					/>
+				</Grid.Col>
+				<Grid.Col span={6}>
+					<TextInput
+						label='Birthday'
+						type='date'
+						classNames={{ input: classes.input }}
+						disabled={mode !== 'create'}
+						{...form.getInputProps('birthday')}
+					/>
+				</Grid.Col>
+				<Grid.Col span={12}>
+					<TextInput
+						label='Address'
+						placeholder='Enter address'
+						classNames={{ input: classes.input }}
+						disabled={mode !== 'edit' && mode !== 'create'}
+						{...form.getInputProps('address')}
+					/>
+				</Grid.Col>
+			</Grid>
+
+			{/* Emergency Contact */}
+			<Grid>
+				<Grid.Col span={6}>
+					<TextInput
+						label='Emergency Contact Name'
+						classNames={{ input: classes.input }}
+						disabled={mode !== 'create' && mode === 'view'}
+						{...form.getInputProps('emergencyContactName')}
+					/>
+				</Grid.Col>
+				<Grid.Col span={6}>
+					<TextInput
+						label='Emergency Contact Phone'
+						classNames={{ input: classes.input }}
+						disabled={mode !== 'create' && mode === 'view'}
+						{...form.getInputProps('emergencyContactPhone')}
+					/>
+				</Grid.Col>
+			</Grid>
+
+			{/* Specialties */}
+			<Stack gap='xs'>
+				<Text
+					size='sm'
+					fw={500}
+				>
+					Specialties
+				</Text>
+				{mode === 'view' ? (
+					<Group
+						gap='xs'
+						wrap='wrap'
+					>
+						{form.values.specialties.length > 0 ? (
+							form.values.specialties.map((s, i) => (
+								<Badge
+									key={i}
+									variant='light'
+									color='blue'
+								>
+									{s}
+								</Badge>
+							))
+						) : (
+							<Text
+								size='sm'
+								c='dimmed'
+							>
+								No specialties listed
+							</Text>
+						)}
+					</Group>
+				) : (
+					<TagsInput
+						placeholder='Add specialties'
+						splitChars={[',']}
+						clearable
+						{...form.getInputProps('specialties')}
+					/>
+				)}
+			</Stack>
+
+			{/* Bio */}
+			<Textarea
+				label='Bio'
+				placeholder='Enter bio'
+				autosize
+				minRows={2}
+				classNames={{ input: classes.input }}
+				disabled={mode === 'view'}
+				{...form.getInputProps('bio')}
 			/>
-			<TextInput
-				label='Email'
-				placeholder='Client email'
-				defaultValue={data?.email}
-				disabled={isView}
-			/>
-		</>
+		</Stack>
 	);
 }
