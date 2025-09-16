@@ -4,18 +4,28 @@ import { useMutation } from '@apollo/client/react';
 import { useForm } from '@mantine/form';
 import { TextInput, PasswordInput, Button, Paper, Stack, Title, Text, Group, Center, rem } from '@mantine/core';
 import { IconUsers } from '@tabler/icons-react';
-import Link from 'next/link';
 
-import { LOGIN_MUTATION } from '@/graphql/mutations/auth';
 import { notify } from '@/utils/notifications';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import LoadingOverlayWrapper from '@/components/LoadingOverlayWrapper';
+import { useUser } from '@/context/UserContext';
+import { GET_CURRENT_USER } from '@/graphql/queries/users';
+import { LOGIN_MUTATION } from '@/graphql/mutations/auth';
 
 interface LoginResponse {
 	login: {
-		statusCode: number;
+		data: {
+			id: string;
+			firstName: string;
+			lastName: string;
+			username: string;
+			email: string;
+			avatar?: string | null;
+		} | null;
 		message: string;
+		statusCode: number;
 	};
 }
 
@@ -27,7 +37,10 @@ interface LoginVariables {
 
 export default function LoginPage() {
 	const router = useRouter();
-	const [login, { loading }] = useMutation(LOGIN_MUTATION);
+
+	const { refetchUser } = useUser();
+
+	const [login, { loading }] = useMutation<LoginResponse, LoginVariables>(LOGIN_MUTATION);
 
 	const form = useForm({
 		initialValues: {
@@ -57,34 +70,26 @@ export default function LoginPage() {
 		},
 	});
 
-	const handleSubmit = async (values: typeof form.values) => {
-		try {
-			const variables: LoginVariables = {
-				email: values.identifier.includes('@') ? values.identifier : null,
-				username: values.identifier.includes('@') ? null : values.identifier,
-				password: values.password,
-			};
+	const handleSubmit = async (values: { identifier: string; password: string }) => {
+		const variables = {
+			email: values.identifier.includes('@') ? values.identifier : null,
+			username: values.identifier.includes('@') ? null : values.identifier,
+			password: values.password,
+		};
 
-			const result = await login({ variables });
-			const data = result.data as LoginResponse | undefined;
-			const res = data?.login;
+		const result = await login({
+			variables,
+			refetchQueries: [{ query: GET_CURRENT_USER }],
+		});
 
-			if (!res) return notify('Error', 'No response from server', 'red');
+		const res = result.data?.login;
+		if (res?.statusCode === 200) {
+			notify('Welcome', res.message);
+			refetchUser();
 
-			if (res.statusCode === 200) {
-				notify('Welcome', res.message);
-				form.reset();
-				// Short delay so user can see notification
-				setTimeout(() => {
-					router.push('/');
-				}, 1000);
-			} else {
-				notify('Error', res.message || 'Login failed', 'red');
-				form.reset();
-			}
-		} catch (err) {
-			const message = err instanceof Error ? err.message : 'Something went wrong';
-			notify('Error', message, 'red');
+			router.push('/');
+		} else {
+			notify('Login failed', res?.message || 'Login failed', 'red');
 		}
 	};
 

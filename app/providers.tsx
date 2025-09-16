@@ -5,33 +5,36 @@ import { ApolloProvider } from '@apollo/client/react';
 import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { apolloClient } from '@/lib/apolloClient';
+import { UserProvider } from '@/context/UserContext';
 
 export default function Providers({ children }: { children: ReactNode }) {
 	return (
 		<ApolloProvider client={apolloClient}>
-			<MantineProvider
-				withGlobalClasses
-				defaultColorScheme='light'
-				theme={{
-					fontFamily: 'Poppins, sans-serif',
-				}}
-			>
-				<Notifications
-					autoClose={2000}
-					position='top-center'
-					zIndex={9999}
-					styles={{
-						root: {
-							maxWidth: 400,
-							width: '100%',
-							right: '0',
-							position: 'absolute',
-							top: '2%',
-						},
+			<UserProvider>
+				<MantineProvider
+					withGlobalClasses
+					defaultColorScheme='light'
+					theme={{
+						fontFamily: 'Poppins, sans-serif',
 					}}
-				/>
-				{children}
-			</MantineProvider>
+				>
+					<Notifications
+						autoClose={2000}
+						position='top-center'
+						zIndex={9999}
+						styles={{
+							root: {
+								maxWidth: 400,
+								width: '100%',
+								right: '0',
+								position: 'absolute',
+								top: '2%',
+							},
+						}}
+					/>
+					{children}
+				</MantineProvider>
+			</UserProvider>
 		</ApolloProvider>
 	);
 }
