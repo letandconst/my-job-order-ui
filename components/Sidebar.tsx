@@ -1,6 +1,6 @@
 'use client';
 
-import { NavLink, ScrollArea, Box, Group, Text, Tooltip, useMantineTheme, useMantineColorScheme, Typography } from '@mantine/core';
+import { NavLink, ScrollArea, Box, Group, Text, Tooltip, Typography } from '@mantine/core';
 import { IconLayoutDashboard, IconClipboardList, IconTool, IconPackage, IconUserShield, IconUsersGroup, IconUserCog, IconReportAnalytics } from '@tabler/icons-react';
 import { usePathname } from 'next/navigation';
 
@@ -103,21 +103,21 @@ export function Sidebar({ collapsed }: SidebarProps) {
 					)}
 					<SidebarLink
 						label='Users'
-						href='/users'
+						href='/manage/users'
 						icon={<IconUserShield size={18} />}
 						collapsed={collapsed}
 						active={pathname.startsWith('/users')}
 					/>
 					<SidebarLink
 						label='Clients'
-						href='/clients'
+						href='/manage/clients'
 						icon={<IconUsersGroup size={18} />}
 						collapsed={collapsed}
 						active={pathname.startsWith('/clients')}
 					/>
 					<SidebarLink
 						label='Mechanics'
-						href='/mechanics'
+						href='/manage/mechanics'
 						icon={<IconUserCog size={18} />}
 						collapsed={collapsed}
 						active={pathname.startsWith('/mechanics')}
