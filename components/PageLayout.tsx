@@ -33,7 +33,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode; pathn
 				<HeaderBar onToggleSidebar={() => setCollapsed((c) => !c)} />
 
 				{/* Page content below header */}
-				<Box style={{ flex: 1, padding: '16px', overflow: 'auto' }}>{children}</Box>
+				<Box style={{ flex: 1, padding: '16px', overflow: 'auto', background: '#fdfdfd' }}>{children}</Box>
 			</AppShell.Main>
 		</AppShell>
 	);

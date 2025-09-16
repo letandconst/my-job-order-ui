@@ -59,3 +59,13 @@ export const RESET_PASSWORD_MUTATION = gql`
 		}
 	}
 `;
+
+export const UPDATE_PROFILE_MUTATION = gql`
+	mutation UpdateProfile($email: String, $avatar: String, $password: String) {
+		updateProfile(email: $email, avatar: $avatar, password: $password) {
+			data
+			message
+			statusCode
+		}
+	}
+`;

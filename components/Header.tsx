@@ -1,10 +1,11 @@
 'use client';
 import { Group, ActionIcon, Menu, Avatar, useMantineColorScheme, Box } from '@mantine/core';
 import { IconMenu2, IconSun, IconMoonStars, IconBell, IconUser, IconLogout } from '@tabler/icons-react';
-import { useUser, User } from '@/context/UserContext';
+import { useUser } from '@/context/UserContext';
 import { useApolloClient, useMutation } from '@apollo/client/react';
 import { LOGOUT_MUTATION } from '@/graphql/mutations/auth';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export function HeaderBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 	const { colorScheme, toggleColorScheme } = useMantineColorScheme();
@@ -20,11 +21,6 @@ export function HeaderBar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
 			await client.clearStore();
 		},
 	});
-
-	const getInitials = (user: User | null) => {
-		if (!user) return '';
-		return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
-	};
 
 	const handleLogout = async () => {
 		await logoutMutation();
@@ -74,11 +70,25 @@ export function HeaderBar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
 							src={user?.avatar || null}
 							alt={`${user?.firstName} ${user?.lastName}`}
 							name={`${user?.firstName} ${user?.lastName}`}
+							style={{
+								cursor: 'pointer',
+							}}
+							styles={{
+								image: {
+									height: 'auto',
+								},
+							}}
 						/>
 					</Menu.Target>
 
 					<Menu.Dropdown>
-						<Menu.Item leftSection={<IconUser size={16} />}>Account Settings</Menu.Item>
+						<Menu.Item
+							component={Link}
+							href='/profile'
+							leftSection={<IconUser size={16} />}
+						>
+							Account Settings
+						</Menu.Item>
 						<Menu.Item
 							leftSection={<IconLogout size={16} />}
 							color='red'

@@ -1,34 +1,35 @@
 {
-  "name": "client",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "@apollo/client": "^4.0.5",
-    "@mantine/core": "^8.3.1",
-    "@mantine/form": "^8.3.1",
-    "@mantine/hooks": "^8.3.1",
-    "@mantine/notifications": "^8.3.1",
-    "@tabler/icons-react": "^3.34.1",
-    "dayjs": "^1.11.18",
-    "graphql": "^16.11.0",
-    "graphql-tag": "^2.12.6",
-    "next": "15.5.3",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
-  },
-  "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.5.3",
-    "typescript": "^5"
-  }
+	"name": "client",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"dev": "next dev --turbopack",
+		"build": "next build --turbopack",
+		"start": "next start",
+		"lint": "eslint"
+	},
+	"dependencies": {
+		"@apollo/client": "^4.0.5",
+		"@mantine/core": "^8.3.1",
+		"@mantine/form": "^8.3.1",
+		"@mantine/hooks": "^8.3.1",
+		"@mantine/notifications": "^8.3.1",
+		"@tabler/icons-react": "^3.34.1",
+		"dayjs": "^1.11.18",
+		"graphql": "^16.11.0",
+		"graphql-tag": "^2.12.6",
+		"next": "15.5.3",
+		"react": "19.1.0",
+		"react-dom": "19.1.0"
+	},
+	"devDependencies": {
+		"@eslint/eslintrc": "^3",
+		"@types/apollo-upload-client": "^18.0.0",
+		"@types/node": "^20",
+		"@types/react": "^19",
+		"@types/react-dom": "^19",
+		"eslint": "^9",
+		"eslint-config-next": "15.5.3",
+		"typescript": "^5"
+	}
 }

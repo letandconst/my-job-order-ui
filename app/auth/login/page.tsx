@@ -90,6 +90,7 @@ export default function LoginPage() {
 			router.push('/');
 		} else {
 			notify('Login failed', res?.message || 'Login failed', 'red');
+			form.reset();
 		}
 	};
 
