@@ -5,7 +5,7 @@ import { DataTable, type DataTableSortStatus, type DataTableColumn } from 'manti
 import { Box, TextInput, Group, ActionIcon, Button, Flex } from '@mantine/core';
 import { IconSearch, IconEye, IconEdit } from '@tabler/icons-react';
 
-interface ReusableDataTableProps<T extends { id: string | number }> {
+interface ReusableDataTableProps<T extends { _id: string | number }> {
 	data: T[];
 	columns: DataTableColumn<T>[]; // user-defined columns
 	pageSize?: number;
@@ -16,7 +16,7 @@ interface ReusableDataTableProps<T extends { id: string | number }> {
 	onAction?: (action: 'view' | 'edit', row: T) => void;
 }
 
-export function ReusableDataTable<T extends { id: string | number }>({ data, columns, pageSize = 10, globalSearch = true, loading = false, buttonLabel, onButtonClick, onAction }: ReusableDataTableProps<T>) {
+export function ReusableDataTable<T extends { _id: string | number }>({ data, columns, pageSize = 10, globalSearch = true, loading = false, buttonLabel, onButtonClick, onAction }: ReusableDataTableProps<T>) {
 	const [page, setPage] = useState(1);
 	const [search, setSearch] = useState('');
 	const [sortStatus, setSortStatus] = useState<DataTableSortStatus<T>>({
