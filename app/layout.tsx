@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Providers from './providers';
 import { Poppins } from 'next/font/google';
 import '@mantine/core/styles.css';
+import 'mantine-datatable/styles.layer.css';
 
 import { AppWrapper } from '@/components/AppWrapper';
 

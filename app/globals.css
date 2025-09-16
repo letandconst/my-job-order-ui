@@ -30,3 +30,5 @@ select {
 a {
 	text-decoration: none;
 }
+
+@layer mantine, mantine-datatable;
