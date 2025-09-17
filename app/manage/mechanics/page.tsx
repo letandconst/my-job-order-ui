@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { DataTableColumn } from 'mantine-datatable';
 import { ListMechanicsResponse, Mechanic } from '@/types/mechanic';
 
-export default function ClientsPage() {
+export default function MechanicsPage() {
 	const { data, loading } = useQuery<ListMechanicsResponse>(LIST_MECHANICS, {
 		fetchPolicy: 'cache-first',
 	});

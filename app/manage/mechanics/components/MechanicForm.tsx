@@ -8,7 +8,7 @@ import { CreateMechanicResponse, Mechanic, UpdateMechanicResponse } from '@/type
 import { IconPencil } from '@tabler/icons-react';
 import { useCloudinaryUpload } from '@/hooks/useCloudinaryUpload';
 import { notify } from '@/utils/notifications';
-import classes from './MechanicForm.module.css';
+
 import { toInputDate, toDisplayDate } from '@/utils/dateFormatter';
 import { LIST_MECHANICS } from '@/graphql/queries/mechanics';
 
@@ -215,7 +215,6 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 							<TextInput
 								label='Name'
 								placeholder='Enter full name'
-								classNames={{ input: classes.input }}
 								disabled={mode !== 'create'}
 								{...form.getInputProps('name')}
 							/>
@@ -224,7 +223,6 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 							<TextInput
 								label='Date Joined'
 								type='date'
-								classNames={{ input: classes.input }}
 								disabled={mode !== 'create'}
 								{...form.getInputProps('dateJoined')}
 							/>
@@ -235,7 +233,6 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 					<TextInput
 						label='Phone Number'
 						placeholder='Enter phone number'
-						classNames={{ input: classes.input }}
 						disabled={mode !== 'edit' && mode !== 'create'}
 						{...form.getInputProps('phoneNumber')}
 					/>
@@ -244,7 +241,6 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 					<TextInput
 						label='Birthday'
 						type='date'
-						classNames={{ input: classes.input }}
 						disabled={mode !== 'create'}
 						{...form.getInputProps('birthday')}
 					/>
@@ -253,7 +249,6 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 					<TextInput
 						label='Address'
 						placeholder='Enter address'
-						classNames={{ input: classes.input }}
 						disabled={mode !== 'edit' && mode !== 'create'}
 						{...form.getInputProps('address')}
 					/>
@@ -265,7 +260,6 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 				<Grid.Col span={6}>
 					<TextInput
 						label='Emergency Contact Name'
-						classNames={{ input: classes.input }}
 						disabled={mode !== 'create' && mode === 'view'}
 						{...form.getInputProps('emergencyContactName')}
 					/>
@@ -273,7 +267,6 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 				<Grid.Col span={6}>
 					<TextInput
 						label='Emergency Contact Phone'
-						classNames={{ input: classes.input }}
 						disabled={mode !== 'create' && mode === 'view'}
 						{...form.getInputProps('emergencyContactPhone')}
 					/>
@@ -328,7 +321,6 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 				placeholder='Enter bio'
 				autosize
 				minRows={2}
-				classNames={{ input: classes.input }}
 				disabled={mode === 'view'}
 				{...form.getInputProps('bio')}
 			/>

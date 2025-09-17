@@ -1,6 +1,0 @@
-.input:disabled {
-	background-color: #f8f9fa !important; /* lighter background */
-	color: #212529 !important; /* darker text for readability */
-	opacity: 1 !important; /* remove Mantine fade */
-	-webkit-text-fill-color: #212529 !important; /* fix Safari text color */
-}
