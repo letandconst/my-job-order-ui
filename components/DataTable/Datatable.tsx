@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { DataTable, type DataTableSortStatus, type DataTableColumn } from 'mantine-datatable';
 import { Box, TextInput, Group, ActionIcon, Button, Flex } from '@mantine/core';
 import { IconSearch, IconEye, IconEdit } from '@tabler/icons-react';
+import React from 'react';
 
 interface ReusableDataTableProps<T extends { _id: string | number }> {
 	data: T[];
@@ -16,6 +17,9 @@ interface ReusableDataTableProps<T extends { _id: string | number }> {
 	onAction?: (action: 'view' | 'edit', row: T) => void;
 }
 
+type Primitive = string | number | boolean;
+type ColumnFilterValue = Primitive | Primitive[];
+
 export function ReusableDataTable<T extends { _id: string | number }>({ data, columns, pageSize = 10, globalSearch = true, loading = false, buttonLabel, onButtonClick, onAction }: ReusableDataTableProps<T>) {
 	const [page, setPage] = useState(1);
 	const [search, setSearch] = useState('');
@@ -25,6 +29,8 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 	});
 	const [records, setRecords] = useState<T[]>([]);
 	const [pageLoading, setPageLoading] = useState(false);
+
+	const [columnFilters, setColumnFilters] = useState<Record<string, ColumnFilterValue>>({});
 
 	const paginatedRecords = records.map((record, index) => ({ id: record._id ?? index, ...record })).slice((page - 1) * pageSize, page * pageSize);
 
@@ -55,6 +61,26 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 			filtered = filtered.filter((item) => Object.values(item).some((value) => value?.toString().toLowerCase().includes(search.toLowerCase())));
 		}
 
+		Object.entries(columnFilters).forEach(([key, value]) => {
+			if (!value || (Array.isArray(value) && value.length === 0)) return;
+
+			filtered = filtered.filter((item) => {
+				const cellValue = key.split('.').reduce<unknown>((acc, k) => (acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[k] : undefined), item);
+
+				if (key === 'isActive') {
+					if (Array.isArray(value)) {
+						return value.some((v) => cellValue === (v === 'true'));
+					}
+					return cellValue === (value === 'true');
+				}
+
+				if (Array.isArray(value)) {
+					return value.includes(cellValue);
+				}
+				return cellValue === value;
+			});
+		});
+
 		if (sortStatus.columnAccessor) {
 			filtered = nativeSort(filtered, sortStatus.columnAccessor as keyof T, sortStatus.direction);
 		}
@@ -62,7 +88,7 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 		setRecords(filtered);
 		setPage(1);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [data, search, sortStatus, loading]);
+	}, [data, search, sortStatus, columnFilters, loading]);
 
 	// simulate backend page fetch
 	const handlePageChange = (newPage: number) => {
@@ -105,6 +131,32 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 			</Group>
 		),
 	};
+
+	const enhancedColumns = columns.map((col) =>
+		col.filter
+			? {
+					...col,
+					filter: React.cloneElement(col.filter as React.ReactElement<{ value?: unknown; onChange?: (v: unknown) => void }>, {
+						value: (() => {
+							const val = columnFilters[col.accessor as string];
+							if (typeof val === 'boolean') return val ? 'true' : 'false';
+							if (Array.isArray(val)) return val;
+							return val ?? null;
+						})(),
+
+						onChange: (v: unknown) =>
+							setColumnFilters(
+								(prev) =>
+									({
+										...prev,
+										[col.accessor as string]: v as ColumnFilterValue,
+									} as Record<string, ColumnFilterValue>)
+							),
+					}),
+					filtering: Boolean(Array.isArray(columnFilters[col.accessor as string]) && (columnFilters[col.accessor as string] as Primitive[]).length > 0),
+			  }
+			: col
+	);
 
 	return (
 		<Box>
@@ -155,7 +207,7 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 				page={page}
 				onPageChange={handlePageChange}
 				records={paginatedRecords}
-				columns={[...columns, actionColumn]}
+				columns={[...enhancedColumns, actionColumn]}
 				sortStatus={sortStatus}
 				onSortStatusChange={setSortStatus}
 				noRecordsText='No data found'
