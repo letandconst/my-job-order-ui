@@ -27,6 +27,9 @@ export function ReusableModal({ opened, onClose, title, children, showFooter = t
 				backgroundOpacity: 0.45,
 				blur: 2,
 			}}
+			style={{
+				zIndex: 100,
+			}}
 		>
 			{/* Body */}
 			{children}

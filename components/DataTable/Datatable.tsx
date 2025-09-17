@@ -20,8 +20,8 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 	const [page, setPage] = useState(1);
 	const [search, setSearch] = useState('');
 	const [sortStatus, setSortStatus] = useState<DataTableSortStatus<T>>({
-		columnAccessor: columns[0]?.accessor as keyof T,
-		direction: 'asc',
+		columnAccessor: 'createdAt' as keyof T,
+		direction: 'desc',
 	});
 	const [records, setRecords] = useState<T[]>([]);
 	const [pageLoading, setPageLoading] = useState(false);

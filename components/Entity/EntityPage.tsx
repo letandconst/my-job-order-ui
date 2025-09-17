@@ -67,7 +67,7 @@ export function EntityPage<T extends { _id: string | number }>({ title, data, lo
 					const event = new Event('form-submit');
 					window.dispatchEvent(event);
 				}}
-				size='lg'
+				size='xl'
 			>
 				<FormComponent
 					mode={modal.mode}
