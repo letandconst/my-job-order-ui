@@ -26,6 +26,8 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 	const [records, setRecords] = useState<T[]>([]);
 	const [pageLoading, setPageLoading] = useState(false);
 
+	const paginatedRecords = records.map((record, index) => ({ id: record._id ?? index, ...record })).slice((page - 1) * pageSize, page * pageSize);
+
 	// universal comparator
 	const nativeSort = (arr: T[], accessor: keyof T, dir: 'asc' | 'desc') => {
 		return [...arr].sort((a, b) => {
@@ -86,6 +88,7 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 					size='md'
 					variant='subtle'
 					color='green'
+					key='view'
 					onClick={() => onAction?.('view', row)}
 				>
 					<IconEye size={16} />
@@ -94,6 +97,7 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 					size='md'
 					variant='subtle'
 					color='blue'
+					key='edit'
 					onClick={() => onAction?.('edit', row)}
 				>
 					<IconEdit size={16} />
@@ -142,11 +146,15 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 				fz='sm'
 				verticalAlign='center'
 				fetching={loading || pageLoading}
+				loaderType='oval'
+				loaderSize='md'
+				loaderColor='blue'
+				loaderBackgroundBlur={1}
 				totalRecords={records.length}
 				recordsPerPage={pageSize}
 				page={page}
 				onPageChange={handlePageChange}
-				records={records.slice((page - 1) * pageSize, page * pageSize)}
+				records={paginatedRecords}
 				columns={[...columns, actionColumn]}
 				sortStatus={sortStatus}
 				onSortStatusChange={setSortStatus}

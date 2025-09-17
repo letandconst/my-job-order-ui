@@ -34,18 +34,24 @@ export function EntityPage<T extends { _id: string | number }>({ title, data, lo
 
 	const handleAddClick = () => setModal({ opened: true, mode: 'create' });
 	const handleAction = (action: 'view' | 'edit', row: T) => setModal({ opened: true, mode: action, rowData: row });
-	const handleClose = () => setModal({ opened: false, mode: 'create' });
+	const handleClose = () => {
+		setModal((prev) => ({ ...prev, opened: false }));
+
+		setTimeout(() => {
+			setModal({ opened: false, mode: 'create', rowData: undefined });
+		}, 300);
+	};
 
 	return (
 		<>
 			<PageHeader title={title} />
 
 			<ReusableDataTable
+				loading={loading}
 				data={data}
 				columns={columns}
 				pageSize={pageSize}
 				onAction={handleAction}
-				loading={loading}
 				buttonLabel={`Add New ${entityName}`}
 				onButtonClick={handleAddClick}
 			/>
