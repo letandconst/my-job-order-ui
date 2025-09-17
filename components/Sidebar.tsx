@@ -69,21 +69,21 @@ export function Sidebar({ collapsed }: SidebarProps) {
 					)}
 					<SidebarLink
 						label='Job Orders'
-						href='/job-orders'
+						href='/manage/job-orders'
 						icon={<IconClipboardList size={18} />}
 						collapsed={collapsed}
 						active={pathname.startsWith('/job-orders')}
 					/>
 					<SidebarLink
 						label='Services'
-						href='/services'
+						href='/manage/services'
 						icon={<IconTool size={18} />}
 						collapsed={collapsed}
 						active={pathname.startsWith('/services')}
 					/>
 					<SidebarLink
 						label='Inventory'
-						href='/inventory'
+						href='/manage/inventory'
 						icon={<IconPackage size={18} />}
 						collapsed={collapsed}
 						active={pathname.startsWith('/inventory')}
@@ -137,7 +137,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
 					)}
 					<SidebarLink
 						label='Reports'
-						href='/reports'
+						href='/manage/reports'
 						icon={<IconReportAnalytics size={18} />}
 						collapsed={collapsed}
 						active={pathname.startsWith('/reports')}
