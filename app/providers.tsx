@@ -21,7 +21,6 @@ export default function Providers({ children }: { children: ReactNode }) {
 					<Notifications
 						autoClose={2000}
 						position='top-center'
-						zIndex={9999}
 						styles={{
 							root: {
 								maxWidth: 400,
@@ -29,6 +28,7 @@ export default function Providers({ children }: { children: ReactNode }) {
 								right: '0',
 								position: 'absolute',
 								top: '2%',
+								zIndex: '9999',
 							},
 						}}
 					/>

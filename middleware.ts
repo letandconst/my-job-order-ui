@@ -6,7 +6,7 @@ const publicPaths = ['/auth/login', '/auth/forgot-password', '/auth/reset-passwo
 
 export function middleware(req: NextRequest) {
 	const { pathname } = req.nextUrl;
-	const token = req.cookies.get('accessToken')?.value;
+	const token = req.cookies.get('refreshToken')?.value;
 
 	// If user is authenticated and trying to access login or forgot-password, redirect to home
 	if (token && publicPaths.some((path) => pathname.startsWith(path))) {
