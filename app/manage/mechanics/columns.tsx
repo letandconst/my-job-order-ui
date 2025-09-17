@@ -1,20 +1,23 @@
 import { toDisplayDate } from '@/utils/dateFormatter';
 import { Badge, Group } from '@mantine/core';
+import Image from 'next/image';
+import portraitImg from '@/public/Portrait.png';
 
 export const mechanicColumns = [
 	{
 		accessor: 'avatar',
 		title: 'Avatar',
 		render: (row: { avatar: string; name: string }) => (
-			// eslint-disable-next-line @next/next/no-img-element
-			<img
-				src={row.avatar || '/Portrait.png'}
+			<Image
+				src={row.avatar || portraitImg}
 				alt={row.name}
 				width={40}
 				height={40}
 				style={{ borderRadius: '50%' }}
+				priority={false} // optional, only for above-the-fold
 			/>
 		),
+		sortable: false,
 	},
 	{
 		accessor: 'name',

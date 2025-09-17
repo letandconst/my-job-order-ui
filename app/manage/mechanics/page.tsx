@@ -11,7 +11,9 @@ import { DataTableColumn } from 'mantine-datatable';
 import { ListMechanicsResponse, Mechanic } from '@/types/mechanic';
 
 export default function ClientsPage() {
-	const { data, loading } = useQuery<ListMechanicsResponse>(LIST_MECHANICS);
+	const { data, loading } = useQuery<ListMechanicsResponse>(LIST_MECHANICS, {
+		fetchPolicy: 'cache-first',
+	});
 	const [mechanics, setMechanics] = useState<Mechanic[]>([]);
 
 	useEffect(() => {
