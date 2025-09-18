@@ -1,6 +1,7 @@
 import { useForm } from '@mantine/form';
 import { TextInput, Stack, Text, Switch, Select, Group, Textarea } from '@mantine/core';
 import { ServiceType } from '@/types/serviceType';
+import { IconChevronDown } from '@tabler/icons-react';
 
 const categories = [
 	{ value: 'Preventive Maintenance', label: 'Preventive Maintenance' },
@@ -61,42 +62,45 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange, onSub
 
 	return (
 		<>
-			<TextInput
-				label='Name'
-				placeholder='Service name'
-				readOnly={readOnly}
-				{...form.getInputProps('name')}
-			/>
+			<Stack gap='sm'>
+				<TextInput
+					label='Name'
+					placeholder='Service name'
+					readOnly={readOnly}
+					{...form.getInputProps('name')}
+				/>
 
-			<Textarea
-				label='Description'
-				placeholder='Optional description'
-				readOnly={readOnly}
-				autosize
-				minRows={2}
-				{...form.getInputProps('description')}
-			/>
+				<Textarea
+					label='Description'
+					placeholder='Optional description'
+					readOnly={readOnly}
+					autosize
+					minRows={2}
+					{...form.getInputProps('description')}
+				/>
 
-			<Select
-				label='Category'
-				placeholder='Select category'
-				checkIconPosition='right'
-				data={categories}
-				disabled={readOnly}
-				searchable
-				allowDeselect={false}
-				clearable
-				{...form.getInputProps('category')}
-			/>
-
-			<Switch
-				mt='md'
-				label='Active'
-				disabled={readOnly}
-				checked={form.values.isActive}
-				onChange={(e) => form.setFieldValue('isActive', e.currentTarget.checked)}
-			/>
-
+				<Select
+					label='Category'
+					placeholder='Select category'
+					checkIconPosition='right'
+					data={categories}
+					disabled={readOnly}
+					searchable
+					allowDeselect={false}
+					clearable
+					rightSection={<IconChevronDown size={16} />}
+					{...form.getInputProps('category')}
+				/>
+			</Stack>
+			{mode !== 'view' && (
+				<Switch
+					mt='md'
+					label='Active'
+					disabled={readOnly}
+					checked={form.values.isActive}
+					onChange={(e) => form.setFieldValue('isActive', e.currentTarget.checked)}
+				/>
+			)}
 			{readOnly ? (
 				<Stack
 					mt='md'

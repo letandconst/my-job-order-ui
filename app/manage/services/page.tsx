@@ -22,13 +22,15 @@ export default function MechanicsPage() {
 		}
 	}, [data]);
 	return (
-		<EntityPage
-			title='Services'
-			data={serviceTypes}
-			columns={serviceTypeColumns as DataTableColumn<ServiceType>[]}
-			FormComponent={ServiceTypeForm}
-			entityName='Service'
-			loading={loading}
-		/>
+		<>
+			<EntityPage
+				title='Services'
+				data={serviceTypes}
+				columns={serviceTypeColumns as DataTableColumn<ServiceType>[]}
+				FormComponent={ServiceTypeForm}
+				entityName='Service'
+				loading={loading}
+			/>
+		</>
 	);
 }

@@ -1,5 +1,5 @@
-import { Badge, MultiSelect, Select, Stack, Text } from '@mantine/core';
-import { IconSearch } from '@tabler/icons-react';
+import { Badge, Select, Stack, Text } from '@mantine/core';
+import { IconChevronDown } from '@tabler/icons-react';
 
 export const serviceTypeColumns = [
 	{
@@ -11,13 +11,13 @@ export const serviceTypeColumns = [
 		accessor: 'category',
 		title: 'Category',
 		filter: (
-			<MultiSelect
+			<Select
 				label='Categories'
 				placeholder='Search categories…'
 				data={['Preventive Maintenance', 'Underchassis & Suspension', 'Engine & Drivetrain Repair', 'Electrical & Electronics', 'Air Conditioning (A/C)', 'Body Repair & Paint', 'Auto Detailing & Appearance', 'Upgrades & Accessories']}
-				leftSection={<IconSearch size={16} />}
-				comboboxProps={{ withinPortal: false }}
+				comboboxProps={{ withinPortal: true, position: 'bottom-end' }}
 				clearable
+				rightSection={<IconChevronDown size={16} />}
 				searchable
 			/>
 		),
@@ -53,6 +53,7 @@ export const serviceTypeColumns = [
 				]}
 				clearable
 				comboboxProps={{ withinPortal: true, position: 'bottom-end' }}
+				rightSection={<IconChevronDown size={16} />}
 			/>
 		),
 	},
