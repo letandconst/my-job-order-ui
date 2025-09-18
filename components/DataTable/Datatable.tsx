@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import { DataTable, type DataTableSortStatus, type DataTableColumn } from 'mantine-datatable';
 import { Box, TextInput, Group, ActionIcon, Button, Flex } from '@mantine/core';
-import { IconSearch, IconEye, IconEdit } from '@tabler/icons-react';
+import { IconSearch, IconEye, IconEdit, IconFilter } from '@tabler/icons-react';
 import React from 'react';
+import { useDebouncedValue } from '@mantine/hooks';
 
 interface ReusableDataTableProps<T extends { _id: string | number }> {
 	data: T[];
-	columns: DataTableColumn<T>[]; // user-defined columns
+	columns: DataTableColumn<T>[];
 	pageSize?: number;
 	globalSearch?: boolean;
 	loading?: boolean;
@@ -22,14 +23,16 @@ type ColumnFilterValue = Primitive | Primitive[];
 
 export function ReusableDataTable<T extends { _id: string | number }>({ data, columns, pageSize = 10, globalSearch = true, loading = false, buttonLabel, onButtonClick, onAction }: ReusableDataTableProps<T>) {
 	const [page, setPage] = useState(1);
+
 	const [search, setSearch] = useState('');
+	const [debouncedSearch] = useDebouncedValue(search, 400);
 	const [sortStatus, setSortStatus] = useState<DataTableSortStatus<T>>({
 		columnAccessor: 'createdAt' as keyof T,
 		direction: 'desc',
 	});
 	const [records, setRecords] = useState<T[]>([]);
 	const [pageLoading, setPageLoading] = useState(false);
-
+	const [filterLoading, setFilterLoading] = useState(false);
 	const [columnFilters, setColumnFilters] = useState<Record<string, ColumnFilterValue>>({});
 
 	const paginatedRecords = records.map((record, index) => ({ id: record._id ?? index, ...record })).slice((page - 1) * pageSize, page * pageSize);
@@ -55,40 +58,65 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 	// filtering + sorting
 	useEffect(() => {
 		if (loading) return;
-		let filtered = [...data];
 
-		if (search) {
-			filtered = filtered.filter((item) => Object.values(item).some((value) => value?.toString().toLowerCase().includes(search.toLowerCase())));
-		}
+		const applyFilterAndSort = async () => {
+			setPageLoading(true);
 
-		Object.entries(columnFilters).forEach(([key, value]) => {
-			if (!value || (Array.isArray(value) && value.length === 0)) return;
+			await new Promise((resolve) => setTimeout(resolve, 400));
 
-			filtered = filtered.filter((item) => {
-				const cellValue = key.split('.').reduce<unknown>((acc, k) => (acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[k] : undefined), item);
+			let filtered = [...data];
 
-				if (key === 'isActive') {
-					if (Array.isArray(value)) {
-						return value.some((v) => cellValue === (v === 'true'));
+			// Global search
+			if (debouncedSearch) {
+				filtered = filtered.filter((item) => Object.values(item).some((value) => value?.toString().toLowerCase().includes(debouncedSearch.toLowerCase())));
+			}
+
+			// Column filters
+			Object.entries(columnFilters).forEach(([key, value]) => {
+				if (!value || (Array.isArray(value) && value.length === 0)) return;
+
+				filtered = filtered.filter((item) => {
+					// Reduce safely through nested keys
+					const cellValue = key.split('.').reduce<Primitive | Record<string, Primitive> | undefined>((acc, k) => {
+						if (acc === undefined) return undefined;
+						if (typeof acc === 'object' && acc !== null) {
+							return (acc as Record<string, Primitive>)[k];
+						}
+						return undefined;
+					}, item as Record<string, Primitive>);
+
+					// Boolean filter for isActive
+					if (key === 'isActive') {
+						if (Array.isArray(value)) {
+							return value.some((v) => cellValue === (v === 'true'));
+						}
+						return cellValue === (value === 'true');
 					}
-					return cellValue === (value === 'true');
-				}
 
-				if (Array.isArray(value)) {
-					return value.includes(cellValue);
-				}
-				return cellValue === value;
+					// Array filters (multi-select)
+					if (Array.isArray(value)) {
+						return value.includes(cellValue as Primitive);
+					}
+
+					// Single value filter
+					return cellValue === value;
+				});
 			});
-		});
 
-		if (sortStatus.columnAccessor) {
-			filtered = nativeSort(filtered, sortStatus.columnAccessor as keyof T, sortStatus.direction);
-		}
+			// Sorting
+			if (sortStatus.columnAccessor) {
+				filtered = nativeSort(filtered, sortStatus.columnAccessor as keyof T, sortStatus.direction);
+			}
 
-		setRecords(filtered);
-		setPage(1);
+			setRecords(filtered);
+			setPage(1);
+			setPageLoading(false);
+			setFilterLoading(false);
+		};
+
+		applyFilterAndSort();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [data, search, sortStatus, columnFilters, loading]);
+	}, [data, debouncedSearch, sortStatus, columnFilters, loading]);
 
 	// simulate backend page fetch
 	const handlePageChange = (newPage: number) => {
@@ -96,7 +124,7 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 		setTimeout(() => {
 			setPage(newPage);
 			setPageLoading(false);
-		}, 400); // simulate network delay
+		}, 400);
 	};
 
 	const actionColumn: DataTableColumn<T> = {
@@ -132,31 +160,47 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 		),
 	};
 
-	const enhancedColumns = columns.map((col) =>
-		col.filter
-			? {
-					...col,
-					filter: React.cloneElement(col.filter as React.ReactElement<{ value?: unknown; onChange?: (v: unknown) => void }>, {
-						value: (() => {
-							const val = columnFilters[col.accessor as string];
-							if (typeof val === 'boolean') return val ? 'true' : 'false';
-							if (Array.isArray(val)) return val;
-							return val ?? null;
-						})(),
+	// enhanced columns with automatic filter integration
+	const enhancedColumns = columns.map((col) => {
+		if (!col.filter) return col;
 
-						onChange: (v: unknown) =>
-							setColumnFilters(
-								(prev) =>
-									({
-										...prev,
-										[col.accessor as string]: v as ColumnFilterValue,
-									} as Record<string, ColumnFilterValue>)
-							),
-					}),
-					filtering: Boolean(Array.isArray(columnFilters[col.accessor as string]) && (columnFilters[col.accessor as string] as Primitive[]).length > 0),
-			  }
-			: col
-	);
+		// Check if this column has an active filter
+		const isFiltering = Array.isArray(columnFilters[col.accessor as string]) ? (columnFilters[col.accessor as string] as Primitive[]).length > 0 : columnFilters[col.accessor as string] !== undefined && columnFilters[col.accessor as string] !== null;
+
+		return {
+			...col,
+			filter: React.cloneElement(col.filter as React.ReactElement<{ value?: unknown; onChange?: (v: unknown) => void }>, {
+				value: (() => {
+					const val = columnFilters[col.accessor as string];
+					if (typeof val === 'boolean') return val ? 'true' : 'false';
+					if (Array.isArray(val)) return val;
+					return val ?? null;
+				})(),
+				onChange: (v: unknown) =>
+					setColumnFilters((prev) => ({
+						...prev,
+						[col.accessor as string]: v as ColumnFilterValue,
+					})),
+			}),
+			// Here we can add a colored indicator on the filter icon
+			Header: () => (
+				<Flex
+					align='center'
+					gap={4}
+				>
+					<Box>{col.title}</Box>
+					<ActionIcon
+						size='sm'
+						variant='subtle'
+						color={isFiltering ? 'blue' : 'gray'}
+					>
+						<IconFilter size={14} />
+					</ActionIcon>
+				</Flex>
+			),
+			filtering: isFiltering,
+		};
+	});
 
 	return (
 		<Box>
@@ -197,7 +241,7 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 				verticalSpacing='md'
 				fz='sm'
 				verticalAlign='center'
-				fetching={loading || pageLoading}
+				fetching={loading || pageLoading || filterLoading}
 				loaderType='oval'
 				loaderSize='md'
 				loaderColor='blue'
