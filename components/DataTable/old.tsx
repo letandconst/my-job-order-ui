@@ -9,7 +9,7 @@ import { useDebouncedValue } from '@mantine/hooks';
 
 interface ReusableDataTableProps<T extends { _id: string | number }> {
 	data: T[];
-	columns: DataTableColumn<T>[]; // user-defined columns
+	columns: DataTableColumn<T>[];
 	pageSize?: number;
 	globalSearch?: boolean;
 	loading?: boolean;
@@ -23,6 +23,7 @@ type ColumnFilterValue = Primitive | Primitive[];
 
 export function ReusableDataTable<T extends { _id: string | number }>({ data, columns, pageSize = 10, globalSearch = true, loading = false, buttonLabel, onButtonClick, onAction }: ReusableDataTableProps<T>) {
 	const [page, setPage] = useState(1);
+
 	const [search, setSearch] = useState('');
 	const [debouncedSearch] = useDebouncedValue(search, 400);
 	const [sortStatus, setSortStatus] = useState<DataTableSortStatus<T>>({
@@ -32,7 +33,6 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 	const [records, setRecords] = useState<T[]>([]);
 	const [pageLoading, setPageLoading] = useState(false);
 	const [filterLoading, setFilterLoading] = useState(false);
-
 	const [columnFilters, setColumnFilters] = useState<Record<string, ColumnFilterValue>>({});
 
 	const paginatedRecords = records.map((record, index) => ({ id: record._id ?? index, ...record })).slice((page - 1) * pageSize, page * pageSize);
@@ -56,70 +56,27 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 	};
 
 	// filtering + sorting
-	// useEffect(() => {
-	// 	if (loading) return;
-	// 	let filtered = [...data];
-
-	// 	if (debouncedSearch) {
-	// 		filtered = filtered.filter((item) => Object.values(item).some((value) => value?.toString().toLowerCase().includes(debouncedSearch.toLowerCase())));
-	// 	}
-
-	// 	Object.entries(columnFilters).forEach(([key, value]) => {
-	// 		if (!value || (Array.isArray(value) && value.length === 0)) return;
-
-	// 		filtered = filtered.filter((item) => {
-	// 			// Reduce safely through nested keys
-	// 			const cellValue = key.split('.').reduce<Primitive | Record<string, Primitive> | undefined>((acc, k) => {
-	// 				if (acc === undefined) return undefined;
-	// 				if (typeof acc === 'object' && acc !== null) {
-	// 					return (acc as Record<string, Primitive>)[k];
-	// 				}
-	// 				return undefined;
-	// 			}, item as Record<string, Primitive>);
-
-	// 			// Boolean filter for isActive
-	// 			if (key === 'isActive') {
-	// 				if (Array.isArray(value)) {
-	// 					return value.some((v) => cellValue === (v === 'true'));
-	// 				}
-	// 				return cellValue === (value === 'true');
-	// 			}
-
-	// 			// Array filters (multi-select)
-	// 			if (Array.isArray(value)) {
-	// 				return value.includes(cellValue as Primitive);
-	// 			}
-
-	// 			// Single value filter
-	// 			return cellValue === value;
-	// 		});
-	// 	});
-
-	// 	if (sortStatus.columnAccessor) {
-	// 		filtered = nativeSort(filtered, sortStatus.columnAccessor as keyof T, sortStatus.direction);
-	// 	}
-
-	// 	setRecords(filtered);
-	// 	setPage(1);
-	// 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	// }, [data, search, sortStatus, columnFilters, loading]);
-
 	useEffect(() => {
 		if (loading) return;
 
-		setFilterLoading(true);
+		const applyFilterAndSort = async () => {
+			setPageLoading(true);
 
-		const timer = setTimeout(() => {
+			await new Promise((resolve) => setTimeout(resolve, 400));
+
 			let filtered = [...data];
 
+			// Global search
 			if (debouncedSearch) {
 				filtered = filtered.filter((item) => Object.values(item).some((value) => value?.toString().toLowerCase().includes(debouncedSearch.toLowerCase())));
 			}
 
+			// Column filters
 			Object.entries(columnFilters).forEach(([key, value]) => {
 				if (!value || (Array.isArray(value) && value.length === 0)) return;
 
 				filtered = filtered.filter((item) => {
+					// Reduce safely through nested keys
 					const cellValue = key.split('.').reduce<Primitive | Record<string, Primitive> | undefined>((acc, k) => {
 						if (acc === undefined) return undefined;
 						if (typeof acc === 'object' && acc !== null) {
@@ -128,6 +85,7 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 						return undefined;
 					}, item as Record<string, Primitive>);
 
+					// Boolean filter for isActive
 					if (key === 'isActive') {
 						if (Array.isArray(value)) {
 							return value.some((v) => cellValue === (v === 'true'));
@@ -135,24 +93,29 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 						return cellValue === (value === 'true');
 					}
 
+					// Array filters (multi-select)
 					if (Array.isArray(value)) {
 						return value.includes(cellValue as Primitive);
 					}
 
+					// Single value filter
 					return cellValue === value;
 				});
 			});
 
+			// Sorting
 			if (sortStatus.columnAccessor) {
 				filtered = nativeSort(filtered, sortStatus.columnAccessor as keyof T, sortStatus.direction);
 			}
 
 			setRecords(filtered);
 			setPage(1);
+			setPageLoading(false);
 			setFilterLoading(false);
-		}, 300); // 300ms delay for loader
+		};
 
-		return () => clearTimeout(timer);
+		applyFilterAndSort();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [data, debouncedSearch, sortStatus, columnFilters, loading]);
 
 	// simulate backend page fetch
@@ -161,7 +124,7 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 		setTimeout(() => {
 			setPage(newPage);
 			setPageLoading(false);
-		}, 400); // simulate network delay
+		}, 400);
 	};
 
 	const actionColumn: DataTableColumn<T> = {
@@ -197,6 +160,7 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 		),
 	};
 
+	// enhanced columns with automatic filter integration
 	const enhancedColumns = columns.map((col) => {
 		if (!col.filter) return col;
 
@@ -286,7 +250,7 @@ export function ReusableDataTable<T extends { _id: string | number }>({ data, co
 				recordsPerPage={pageSize}
 				page={page}
 				onPageChange={handlePageChange}
-				records={filterLoading ? [] : paginatedRecords}
+				records={paginatedRecords}
 				columns={[...enhancedColumns, actionColumn]}
 				sortStatus={sortStatus}
 				onSortStatusChange={setSortStatus}
