@@ -13,8 +13,8 @@ export const mechanicColumns = [
 				alt={row.name}
 				width={40}
 				height={40}
-				style={{ borderRadius: '50%' }}
-				priority={false} // optional, only for above-the-fold
+				style={{ borderRadius: '6px' }}
+				priority={false}
 			/>
 		),
 		sortable: false,

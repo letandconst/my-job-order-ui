@@ -154,7 +154,7 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 				<div style={{ position: 'relative', display: 'inline-block' }}>
 					<Avatar
 						src={avatarPreview || form.values.avatar}
-						radius='xl'
+						radius='md'
 						size={80}
 						color='blue'
 					>
