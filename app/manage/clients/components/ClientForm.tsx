@@ -35,10 +35,11 @@ export function ClientForm({ mode, data, onClose, onSubmittingChange }: ClientFo
 		},
 		validate: {
 			name: (val) => (val.trim().length < 3 ? 'Name must be at least 3 characters' : null),
-			mobileNumber: (val) => (val.trim().length < 7 ? 'Invalid phone number' : null),
+			mobileNumber: (val) => (val.trim().length < 7 ? 'Enter a valid phone number' : null),
+			birthday: (val) => (!val ? 'Birthday is required' : null),
 			cars: {
 				model: (val: string) => (!val.trim() ? 'Model is required' : null),
-				year: (val: string) => (!/^\d{4}$/.test(val) ? 'Enter a valid year (e.g., 2023)' : null),
+				year: (val: string) => (!/^\d{4}$/.test(val) ? 'Enter a valid year ' : null),
 				plateNumber: (val: string) => (!val.trim() ? 'Plate number is required' : null),
 			},
 		},
@@ -102,7 +103,9 @@ export function ClientForm({ mode, data, onClose, onSubmittingChange }: ClientFo
 
 	useEffect(() => {
 		const handleFormSubmit = async () => {
-			if (!form.isValid()) return;
+			const validation = form.validate();
+			if (validation.hasErrors) return;
+
 			onSubmittingChange?.(true);
 
 			try {
@@ -139,6 +142,7 @@ export function ClientForm({ mode, data, onClose, onSubmittingChange }: ClientFo
 							placeholder='Enter client name'
 							disabled={mode !== 'create'}
 							{...form.getInputProps('name')}
+							error={form.errors.name}
 						/>
 					</Grid.Col>
 				</Grid>
@@ -151,6 +155,7 @@ export function ClientForm({ mode, data, onClose, onSubmittingChange }: ClientFo
 							placeholder='Enter mobile number'
 							disabled={mode === 'view'}
 							{...form.getInputProps('mobileNumber')}
+							error={form.errors.mobileNumber}
 						/>
 					</Grid.Col>
 					<Grid.Col span={6}>
@@ -159,6 +164,7 @@ export function ClientForm({ mode, data, onClose, onSubmittingChange }: ClientFo
 							type='date'
 							disabled={mode !== 'create'}
 							{...form.getInputProps('birthday')}
+							error={form.errors.birthday}
 						/>
 					</Grid.Col>
 				</Grid>
