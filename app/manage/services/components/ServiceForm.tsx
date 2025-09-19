@@ -43,29 +43,13 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange }: Ser
 		},
 		validate: {
 			name: (value) => (!value ? 'Service name is required' : null),
-			category: (value, values, mode) => (mode === 'create' && !value ? 'Category is required' : null),
-			amount: (value, values, mode) => {
-				if (!value) return null;
-
-				// Check if user actually changed any amount
-				const hasChanged = Object.entries(value).some(([type, val]) => {
-					const original = data?.amount?.[type as keyof typeof data.amount];
-					// Only consider changed if val is different AND user explicitly typed something
-					return val !== undefined && val !== null && val !== original;
-				});
-
-				// Check if at least one non-zero value exists
-				const hasValue = Object.values(value).some((v) => v !== undefined && v !== null && v > 0);
-
-				if (mode === 'create' && !hasValue) {
-					return 'At least one car type amount must be provided';
-				}
-
-				if (mode === 'edit' && hasChanged && !hasValue) {
-					return 'At least one car type amount must be provided';
-				}
-
-				return null;
+			category: (value) => (!value ? 'Category is required' : null),
+			amount: {
+				sedan: (value: number) => (!value ? 'Amount for Sedan is required' : null),
+				hatchback: (value: number) => (!value ? 'Amount for Hatchback is required' : null),
+				crossover: (value: number) => (!value ? 'Amount for Crossover is required' : null),
+				suv: (value: number) => (!value ? 'Amount for SUV is required' : null),
+				pickup: (value: number) => (!value ? 'Amount for Pickup is required' : null),
 			},
 		},
 	});
@@ -87,7 +71,7 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange }: Ser
 					category: form.values.category,
 					description: form.values.description,
 					isActive: form.values.isActive,
-					amount: form.values.amount,
+					amount: Object.fromEntries(Object.entries(form.values.amount).map(([key, value]) => [key, Number(String(value).replace(/,/g, ''))])),
 				},
 			},
 		});
@@ -109,12 +93,10 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange }: Ser
 					category: form.values.category,
 					description: form.values.description,
 					isActive: form.values.isActive,
-					amount: form.values.amount,
+					amount: Object.fromEntries(Object.entries(form.values.amount).map(([key, value]) => [key, Number(String(value).replace(/,/g, ''))])),
 				},
 			},
 		});
-
-		console.log('result', result);
 
 		setTimeout(() => {
 			if (result.data?.updateServiceType?.statusCode === 200) {
@@ -127,7 +109,9 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange }: Ser
 
 	useEffect(() => {
 		const handleFormSubmit = async () => {
-			if (!form.isValid()) return;
+			const validation = form.validate();
+			if (validation.hasErrors) return;
+
 			onSubmittingChange?.(true);
 
 			try {
@@ -159,15 +143,16 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange }: Ser
 					placeholder='Service name'
 					disabled={mode !== 'create'}
 					{...form.getInputProps('name')}
+					error={form.errors.name}
 				/>
 
 				<Textarea
 					label='Description'
-					placeholder='Service description'
+					placeholder={mode !== 'view' ? 'Service description (optional)' : 'N/A'}
 					disabled={readOnly}
 					autosize
 					minRows={2}
-					value={readOnly ? form.values.description || '-' : form.values.description}
+					{...form.getInputProps('description')}
 				/>
 
 				<Select
@@ -181,6 +166,7 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange }: Ser
 					clearable
 					rightSection={<IconChevronDown size={16} />}
 					{...form.getInputProps('category')}
+					error={form.errors.category}
 				/>
 			</Stack>
 			{mode !== 'view' && (
@@ -201,7 +187,7 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange }: Ser
 					<Table
 						striped
 						highlightOnHover
-						withColumnBorders
+						withTableBorder
 					>
 						<Table.Thead>
 							<Table.Tr>
@@ -228,10 +214,16 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange }: Ser
 						<TextInput
 							label='Sedan'
 							{...form.getInputProps('amount.sedan')}
+							onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+								e.target.value = e.target.value.replace(/[^0-9.,]/g, '');
+							}}
 						/>
 						<TextInput
 							label='Hatchback'
 							{...form.getInputProps('amount.hatchback')}
+							onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+								e.target.value = e.target.value.replace(/[^0-9.,]/g, '');
+							}}
 						/>
 					</Group>
 
@@ -242,10 +234,16 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange }: Ser
 						<TextInput
 							label='Crossover'
 							{...form.getInputProps('amount.crossover')}
+							onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+								e.target.value = e.target.value.replace(/[^0-9.,]/g, '');
+							}}
 						/>
 						<TextInput
 							label='SUV'
 							{...form.getInputProps('amount.suv')}
+							onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+								e.target.value = e.target.value.replace(/[^0-9.,]/g, '');
+							}}
 						/>
 					</Group>
 
@@ -253,6 +251,9 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange }: Ser
 						mt='md'
 						label='Pickup'
 						{...form.getInputProps('amount.pickup')}
+						onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+							e.target.value = e.target.value.replace(/[^0-9.,]/g, '');
+						}}
 					/>
 				</>
 			)}
