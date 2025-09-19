@@ -1,79 +1,67 @@
-import { ApolloClient, InMemoryCache, HttpLink, ApolloLink } from '@apollo/client';
+'use client';
+
+import { ApolloClient, ApolloLink, HttpLink, InMemoryCache, Observable, gql } from '@apollo/client';
 import { ErrorLink } from '@apollo/client/link/error';
-import { Observable } from '@apollo/client/core';
-import type { GraphQLError } from 'graphql';
-import { notify } from '@/utils/notifications';
+import { CombinedGraphQLErrors, CombinedProtocolErrors } from '@apollo/client/errors';
+import { SetContextLink } from '@apollo/client/link/context';
+import { REFRESH_TOKEN_MUTATION } from '@/graphql/mutations/auth';
+import Router from 'next/router';
 
-type NextLink = (operation: ApolloLink.Operation) => Observable<ApolloLink.Result>;
-
-interface ErrorResponse {
-	graphQLErrors?: readonly GraphQLError[];
-	networkError?: Error;
-	operation: ApolloLink.Operation;
-	forward?: NextLink;
-}
-
+// Create the main HTTP link
 const httpLink = new HttpLink({
-	uri: `${process.env.NEXT_PUBLIC_BACKEND}/graphql`,
+	uri: process.env.NEXT_PUBLIC_BACKEND + '/graphql',
 	credentials: 'include',
 });
 
-let isRefreshing = false;
-let pending: Array<(ok: boolean) => void> = [];
-
-function refreshToken() {
-	return fetch(`${process.env.NEXT_PUBLIC_BACKEND}/graphql`, {
-		method: 'POST',
-		credentials: 'include',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({
-			query: `mutation { refreshToken { status message } }`,
-		}),
-	}).then((res) => res.json());
-}
-
-const errorLink = new ErrorLink(({ graphQLErrors, operation, forward }: ErrorResponse) => {
-	if (!graphQLErrors) return;
-
-	const unauthorized = graphQLErrors.some((err) => err.extensions?.code === 'UNAUTHENTICATED' || /Unauthorized/i.test(err.message));
-
-	if (!unauthorized) return;
-
-	if (!isRefreshing) {
-		isRefreshing = true;
-		refreshToken()
-			.then((res) => {
-				if (res.errors) throw new Error('Refresh failed');
-				isRefreshing = false;
-				pending.forEach((cb) => cb(true));
-				pending = [];
-			})
-			.catch(async () => {
-				isRefreshing = false;
-				pending.forEach((cb) => cb(false));
-				pending = [];
-
-				notify('Error', 'Session expired, please log in again', 'red');
-
-				await apolloClient.clearStore(); //  clear cache
-				if (typeof window !== 'undefined') {
-					window.location.href = '/auth/login'; //  redirect
-				}
-			});
-	}
-
-	return new Observable((observer) => {
-		pending.push((ok) => {
-			if (!ok) {
-				observer.error(new Error('Could not refresh token'));
-				return;
-			}
-			forward?.(operation).subscribe(observer);
-		});
-	});
+// Create the SetContextLink
+const authLink = new SetContextLink((prevContext, operation) => {
+	return {
+		headers: {
+			...prevContext.headers,
+		},
+	};
 });
 
+// Create the ErrorLink
+const errorLink = new ErrorLink(({ error, operation, forward }) => {
+	if (CombinedGraphQLErrors.is(error)) {
+		for (const err of error.errors) {
+			console.log(`[GraphQL error]: Message: ${err.message}, Path: ${err.path}`);
+
+			// Handle expired or invalid access token
+			if (err.message.includes('Session expired') || err.message.includes('invalid token')) {
+				// Use forward inside an observable to retry the operation
+				return new ApolloLink((op, fwd) => {
+					return new Observable((observer) => {
+						apolloClient
+							.mutate({ mutation: REFRESH_TOKEN_MUTATION })
+							.then(() => {
+								const subscriber = fwd(op).subscribe({
+									next: (result) => observer.next(result),
+									error: (err) => observer.error(err),
+									complete: () => observer.complete(),
+								});
+								return () => subscriber.unsubscribe();
+							})
+							.catch(() => {
+								Router.push('/auth/login'); // Redirect if refresh fails
+								observer.complete();
+							});
+					});
+				}).request(operation, forward);
+			}
+		}
+	} else if (CombinedProtocolErrors.is(error)) {
+		for (const err of error.errors) {
+			console.log(`[Protocol error]: Message: ${err.message}, Extensions: ${JSON.stringify(err.extensions)}`);
+		}
+	} else {
+		console.error(`[Network error]: ${error}`);
+	}
+});
+
+// Combine the links into a single chain
 export const apolloClient = new ApolloClient({
-	link: ApolloLink.from([errorLink, httpLink]),
+	link: ApolloLink.from([authLink, errorLink, httpLink]),
 	cache: new InMemoryCache(),
 });

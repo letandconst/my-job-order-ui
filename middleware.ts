@@ -9,7 +9,7 @@ const ignoredPrefixes = ['/api', '/_next/static', '/_next/image', '/favicon.ico'
 
 export function middleware(req: NextRequest) {
 	const { pathname } = req.nextUrl;
-	const refreshToken = req.cookies.get('refreshToken')?.value;
+	const accessToken = req.cookies.get('accessToken')?.value;
 
 	// ⏭ Skip middleware for static assets & internal paths
 	if (ignoredPrefixes.some((prefix) => pathname.startsWith(prefix)) || ignoredExtensions.some((ext) => pathname.endsWith(ext))) {
@@ -18,11 +18,11 @@ export function middleware(req: NextRequest) {
 
 	const isPublic = publicPaths.some((path) => pathname.startsWith(path));
 
-	if (refreshToken && isPublic) {
+	if (accessToken && isPublic) {
 		return NextResponse.redirect(new URL('/', req.url));
 	}
 
-	if (!refreshToken && !isPublic) {
+	if (!accessToken && !isPublic) {
 		return NextResponse.redirect(new URL('/auth/login', req.url));
 	}
 

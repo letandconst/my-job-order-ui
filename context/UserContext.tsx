@@ -1,5 +1,4 @@
 'use client';
-
 import { createContext, useContext, ReactNode } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { GET_CURRENT_USER } from '@/graphql/queries/users';
@@ -39,7 +38,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 	return <UserContext.Provider value={{ user, loading, refetchUser: refetch }}>{children}</UserContext.Provider>;
 };
 
-export const useUser = () => {
+export const useUser = (): UserContextType => {
 	const context = useContext(UserContext);
 	if (!context) throw new Error('useUser must be used within a UserProvider');
 	return context;
