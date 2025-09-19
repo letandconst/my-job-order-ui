@@ -1,7 +1,7 @@
 'use client';
 
 import { NavLink, ScrollArea, Box, Group, Text, Tooltip, Typography } from '@mantine/core';
-import { IconLayoutDashboard, IconClipboardList, IconTool, IconPackage, IconUserShield, IconUsersGroup, IconUserCog, IconReportAnalytics } from '@tabler/icons-react';
+import { IconLayoutDashboard, IconClipboardList, IconTool, IconChartBar, IconPackage, IconUserShield, IconUsersGroup, IconUserCog, IconReportAnalytics } from '@tabler/icons-react';
 import { usePathname } from 'next/navigation';
 
 import classes from './globals.module.css';
@@ -81,12 +81,21 @@ export function Sidebar({ collapsed }: SidebarProps) {
 						collapsed={collapsed}
 						active={pathname.startsWith('/manage/services')}
 					/>
+
 					<SidebarLink
 						label='Inventory'
 						href='/manage/inventory'
 						icon={<IconPackage size={18} />}
 						collapsed={collapsed}
 						active={pathname.startsWith('/manage/inventory')}
+					/>
+
+					<SidebarLink
+						label='Stocks'
+						href='/manage/stocks'
+						icon={<IconChartBar size={18} />}
+						collapsed={collapsed}
+						active={pathname.startsWith('/manage/stocks')}
 					/>
 
 					{/* PEOPLE */}
