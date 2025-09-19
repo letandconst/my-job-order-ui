@@ -72,21 +72,21 @@ export function Sidebar({ collapsed }: SidebarProps) {
 						href='/manage/job-orders'
 						icon={<IconClipboardList size={18} />}
 						collapsed={collapsed}
-						active={pathname.startsWith('/job-orders')}
+						active={pathname.startsWith('/manage/job-orders')}
 					/>
 					<SidebarLink
 						label='Services'
 						href='/manage/services'
 						icon={<IconTool size={18} />}
 						collapsed={collapsed}
-						active={pathname.startsWith('/services')}
+						active={pathname.startsWith('/manage/services')}
 					/>
 					<SidebarLink
 						label='Inventory'
 						href='/manage/inventory'
 						icon={<IconPackage size={18} />}
 						collapsed={collapsed}
-						active={pathname.startsWith('/inventory')}
+						active={pathname.startsWith('/manage/inventory')}
 					/>
 
 					{/* PEOPLE */}
@@ -106,21 +106,21 @@ export function Sidebar({ collapsed }: SidebarProps) {
 						href='/manage/users'
 						icon={<IconUserShield size={18} />}
 						collapsed={collapsed}
-						active={pathname.startsWith('/users')}
+						active={pathname.startsWith('/manage/users')}
 					/>
 					<SidebarLink
 						label='Clients'
 						href='/manage/clients'
 						icon={<IconUsersGroup size={18} />}
 						collapsed={collapsed}
-						active={pathname.startsWith('/clients')}
+						active={pathname.startsWith('/manage/clients')}
 					/>
 					<SidebarLink
 						label='Mechanics'
 						href='/manage/mechanics'
 						icon={<IconUserCog size={18} />}
 						collapsed={collapsed}
-						active={pathname.startsWith('/mechanics')}
+						active={pathname.startsWith('/manage/mechanics')}
 					/>
 
 					{/* REPORTS */}
@@ -140,7 +140,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
 						href='/manage/reports'
 						icon={<IconReportAnalytics size={18} />}
 						collapsed={collapsed}
-						active={pathname.startsWith('/reports')}
+						active={pathname.startsWith('/manage/reports')}
 					/>
 				</Box>
 			</ScrollArea>
