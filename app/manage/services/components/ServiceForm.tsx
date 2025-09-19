@@ -1,7 +1,12 @@
 import { useForm } from '@mantine/form';
-import { TextInput, Stack, Text, Switch, Select, Group, Textarea } from '@mantine/core';
-import { ServiceType } from '@/types/serviceType';
+import { TextInput, Stack, Text, Switch, Select, Group, Textarea, Table } from '@mantine/core';
+import { CreateServiceResponse, ServiceType, UpdateServiceResponse } from '@/types/serviceType';
 import { IconChevronDown } from '@tabler/icons-react';
+import { useMutation } from '@apollo/client/react';
+import { LIST_SERVICES } from '@/graphql/queries/serviceTypes';
+import { CREATE_SERVICE_TYPE, UPDATE_SERVICE_TYPE } from '@/graphql/mutations/serviceTypes';
+import { notify } from '@/utils/notifications';
+import { useEffect } from 'react';
 
 const categories = [
 	{ value: 'Preventive Maintenance', label: 'Preventive Maintenance' },
@@ -19,10 +24,9 @@ interface ServiceTypeFormProps {
 	data?: ServiceType;
 	onClose?: () => void;
 	onSubmittingChange?: (loading: boolean) => void;
-	onSubmit?: (values: ServiceType) => Promise<void> | void;
 }
 
-export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange, onSubmit }: ServiceTypeFormProps) {
+export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange }: ServiceTypeFormProps) {
 	const form = useForm({
 		initialValues: {
 			name: data?.name ?? '',
@@ -37,28 +41,115 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange, onSub
 				pickup: data?.amount?.pickup ?? 0,
 			},
 		},
-		validate: (values) => {
-			const errors: Record<string, string> = {};
+		validate: {
+			name: (value) => (!value ? 'Service name is required' : null),
+			category: (value, values, mode) => (mode === 'create' && !value ? 'Category is required' : null),
+			amount: (value, values, mode) => {
+				if (!value) return null;
 
-			if (!values.name) {
-				errors.name = 'Service name is required';
-			}
+				// Check if user actually changed any amount
+				const hasChanged = Object.entries(value).some(([type, val]) => {
+					const original = data?.amount?.[type as keyof typeof data.amount];
+					// Only consider changed if val is different AND user explicitly typed something
+					return val !== undefined && val !== null && val !== original;
+				});
 
-			if (!values.category) {
-				errors.category = 'Category is required';
-			}
+				// Check if at least one non-zero value exists
+				const hasValue = Object.values(value).some((v) => v !== undefined && v !== null && v > 0);
 
-			(Object.keys(values.amount) as Array<keyof typeof values.amount>).forEach((key) => {
-				if (values.amount[key]! < 0) {
-					errors[`amount.${key}`] = 'Must be 0 or more';
+				if (mode === 'create' && !hasValue) {
+					return 'At least one car type amount must be provided';
 				}
-			});
 
-			return errors;
+				if (mode === 'edit' && hasChanged && !hasValue) {
+					return 'At least one car type amount must be provided';
+				}
+
+				return null;
+			},
 		},
 	});
 
 	const readOnly = mode === 'view';
+
+	const [createService] = useMutation<CreateServiceResponse>(CREATE_SERVICE_TYPE, {
+		refetchQueries: [{ query: LIST_SERVICES }],
+	});
+	const [updateService] = useMutation<UpdateServiceResponse>(UPDATE_SERVICE_TYPE, {
+		refetchQueries: [{ query: LIST_SERVICES }],
+	});
+
+	const handleCreate = async () => {
+		const result = await createService({
+			variables: {
+				input: {
+					name: form.values.name,
+					category: form.values.category,
+					description: form.values.description,
+					isActive: form.values.isActive,
+					amount: form.values.amount,
+				},
+			},
+		});
+
+		setTimeout(() => {
+			if (result.data?.createServiceType?.statusCode === 200) {
+				notify('Success', 'Service created successfully', 'green');
+			} else {
+				notify('Error', result.data?.createServiceType?.message || 'Failed to create service', 'red');
+			}
+		}, 1000);
+	};
+
+	const handleUpdate = async () => {
+		const result = await updateService({
+			variables: {
+				input: {
+					serviceTypeId: data!._id,
+					category: form.values.category,
+					description: form.values.description,
+					isActive: form.values.isActive,
+					amount: form.values.amount,
+				},
+			},
+		});
+
+		console.log('result', result);
+
+		setTimeout(() => {
+			if (result.data?.updateServiceType?.statusCode === 200) {
+				notify('Success', 'Service updated successfully', 'green');
+			} else {
+				notify('Error', result.data?.updateServiceType?.message || 'Failed to update service', 'red');
+			}
+		}, 1000);
+	};
+
+	useEffect(() => {
+		const handleFormSubmit = async () => {
+			if (!form.isValid()) return;
+			onSubmittingChange?.(true);
+
+			try {
+				if (mode === 'create') {
+					await handleCreate();
+				} else if (mode === 'edit' && data?._id) {
+					await handleUpdate();
+				}
+				onClose?.();
+			} catch (err) {
+				const message = err instanceof Error ? err.message : 'Unknown error';
+				notify('Error', `Something went wrong: ${message}`, 'red');
+				console.error(err);
+			} finally {
+				onSubmittingChange?.(false);
+			}
+		};
+
+		window.addEventListener('form-submit', handleFormSubmit);
+		return () => window.removeEventListener('form-submit', handleFormSubmit);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [form, mode, data, onClose, onSubmittingChange, createService, updateService]);
 
 	return (
 		<>
@@ -66,17 +157,17 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange, onSub
 				<TextInput
 					label='Name'
 					placeholder='Service name'
-					readOnly={readOnly}
+					disabled={mode !== 'create'}
 					{...form.getInputProps('name')}
 				/>
 
 				<Textarea
 					label='Description'
-					placeholder='Optional description'
-					readOnly={readOnly}
+					placeholder='Service description'
+					disabled={readOnly}
 					autosize
 					minRows={2}
-					{...form.getInputProps('description')}
+					value={readOnly ? form.values.description || '-' : form.values.description}
 				/>
 
 				<Select
@@ -106,15 +197,27 @@ export function ServiceTypeForm({ mode, data, onClose, onSubmittingChange, onSub
 					mt='md'
 					gap='xs'
 				>
-					<Text fw={500}>Amount</Text>
-					{Object.entries(form.values.amount).map(([key, value]) => (
-						<Text
-							key={key}
-							size='sm'
-						>
-							{key}: {value}
-						</Text>
-					))}
+					<Text fw={500}>Amount ( per car type )</Text>
+					<Table
+						striped
+						highlightOnHover
+						withColumnBorders
+					>
+						<Table.Thead>
+							<Table.Tr>
+								<Table.Th>Car Type</Table.Th>
+								<Table.Th>Price (₱)</Table.Th>
+							</Table.Tr>
+						</Table.Thead>
+						<Table.Tbody>
+							{Object.entries(form.values.amount).map(([key, value]) => (
+								<Table.Tr key={key}>
+									<Table.Td style={{ textTransform: 'capitalize' }}>{key}</Table.Td>
+									<Table.Td>{typeof value === 'number' ? value.toLocaleString() : '-'}</Table.Td>
+								</Table.Tr>
+							))}
+						</Table.Tbody>
+					</Table>
 				</Stack>
 			) : (
 				<>

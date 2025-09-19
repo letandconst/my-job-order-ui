@@ -20,3 +20,26 @@ export interface ServiceTypeResponse {
 		statusCode: number;
 	};
 }
+
+export interface CreateServiceResponse {
+	createServiceType: {
+		data: ServiceType;
+		message: string;
+		statusCode: number;
+	};
+}
+
+export interface UpdateServiceResponse {
+	updateServiceType: {
+		data: ServiceType;
+		message: string;
+		statusCode: number;
+	};
+}
+
+export interface ServiceFormValues {
+	name: string;
+	category: string;
+	isActive: boolean;
+	amount: Record<string, number | null>;
+}
