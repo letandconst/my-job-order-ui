@@ -41,6 +41,11 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 		validate: {
 			name: (val) => (val.trim().length < 2 ? 'Name must be at least 3 characters' : null),
 			phoneNumber: (val) => (val.trim().length < 7 ? 'Invalid phone number' : null),
+			address: (val) => (!val || val.trim() === '' ? 'Address is required' : null),
+			emergencyContactName: (val) => (!val || val.trim() === '' ? 'Emergency contact name is required' : null),
+			emergencyContactPhone: (val) => (!val || val.trim().length < 7 ? 'Invalid emergency contact phone' : null),
+			dateJoined: (val) => (!val ? 'Date joined is required' : null),
+			birthday: (val) => (!val ? 'Birthday is required' : null),
 		},
 	});
 
@@ -61,7 +66,8 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 
 	useEffect(() => {
 		const handleFormSubmit = async () => {
-			if (!form.isValid()) return;
+			const validation = form.validate();
+			if (validation.hasErrors) return;
 
 			onSubmittingChange?.(true);
 
@@ -217,6 +223,7 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 								placeholder='Enter full name'
 								disabled={mode !== 'create'}
 								{...form.getInputProps('name')}
+								error={form.errors.name}
 							/>
 						</Grid.Col>
 						<Grid.Col span={6}>
@@ -225,6 +232,7 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 								type='date'
 								disabled={mode !== 'create'}
 								{...form.getInputProps('dateJoined')}
+								error={form.errors.dateJoined}
 							/>
 						</Grid.Col>
 					</>
@@ -235,6 +243,7 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 						placeholder='Enter phone number'
 						disabled={mode !== 'edit' && mode !== 'create'}
 						{...form.getInputProps('phoneNumber')}
+						error={form.errors.phoneNumber}
 					/>
 				</Grid.Col>
 				<Grid.Col span={6}>
@@ -243,6 +252,7 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 						type='date'
 						disabled={mode !== 'create'}
 						{...form.getInputProps('birthday')}
+						error={form.errors.birthday}
 					/>
 				</Grid.Col>
 				<Grid.Col span={12}>
@@ -251,6 +261,7 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 						placeholder='Enter address'
 						disabled={mode !== 'edit' && mode !== 'create'}
 						{...form.getInputProps('address')}
+						error={form.errors.address}
 					/>
 				</Grid.Col>
 			</Grid>
@@ -262,6 +273,7 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 						label='Emergency Contact Name'
 						disabled={mode !== 'create' && mode === 'view'}
 						{...form.getInputProps('emergencyContactName')}
+						error={form.errors.emergencyContactName}
 					/>
 				</Grid.Col>
 				<Grid.Col span={6}>
@@ -269,6 +281,7 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 						label='Emergency Contact Phone'
 						disabled={mode !== 'create' && mode === 'view'}
 						{...form.getInputProps('emergencyContactPhone')}
+						error={form.errors.emergencyContactPhone}
 					/>
 				</Grid.Col>
 			</Grid>
