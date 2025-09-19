@@ -5,6 +5,8 @@ import { ColorSchemeScript } from '@mantine/core';
 import { Poppins } from 'next/font/google';
 import '@mantine/core/styles.css';
 import 'mantine-datatable/styles.layer.css';
+import '@mantine/carousel/styles.css';
+import '@mantine/dropzone/styles.css';
 
 import { AppWrapper } from '@/components/AppWrapper';
 

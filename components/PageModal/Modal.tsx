@@ -20,7 +20,7 @@ export function ReusableModal({ opened, onClose, title, children, showFooter = t
 		<Modal
 			opened={opened}
 			onClose={onClose}
-			title={title}
+			title={`${title} Details`}
 			centered
 			size={size}
 			overlayProps={{
