@@ -1,30 +1,30 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Public paths that don’t require auth
 const publicPaths = ['/auth/login', '/auth/forgot-password', '/auth/reset-password'];
+
+// File extensions & internal paths to skip
+const ignoredExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.json'];
+const ignoredPrefixes = ['/api', '/_next/static', '/_next/image', '/favicon.ico'];
 
 export function middleware(req: NextRequest) {
 	const { pathname } = req.nextUrl;
-	const token = req.cookies.get('refreshToken')?.value;
+	const refreshToken = req.cookies.get('refreshToken')?.value;
 
-	// If user is authenticated and trying to access login or forgot-password, redirect to home
-	if (token && publicPaths.some((path) => pathname.startsWith(path))) {
-		const homeUrl = new URL('/', req.url);
-		return NextResponse.redirect(homeUrl);
+	// ⏭ Skip middleware for static assets & internal paths
+	if (ignoredPrefixes.some((prefix) => pathname.startsWith(prefix)) || ignoredExtensions.some((ext) => pathname.endsWith(ext))) {
+		return NextResponse.next();
 	}
 
-	// If user is not authenticated and trying to access a protected page, redirect to login
-	if (!token && !publicPaths.some((path) => pathname.startsWith(path))) {
-		const loginUrl = new URL('/auth/login', req.url);
-		return NextResponse.redirect(loginUrl);
+	const isPublic = publicPaths.some((path) => pathname.startsWith(path));
+
+	if (refreshToken && isPublic) {
+		return NextResponse.redirect(new URL('/', req.url));
 	}
 
-	// Otherwise, allow access
+	if (!refreshToken && !isPublic) {
+		return NextResponse.redirect(new URL('/auth/login', req.url));
+	}
+
 	return NextResponse.next();
 }
-
-// Apply to all routes except Next.js internals
-export const config = {
-	matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
-};
