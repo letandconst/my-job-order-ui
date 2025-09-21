@@ -1,11 +1,11 @@
 import { CreatePartResponse, Part, UpdatePartResponse } from '@/types/part';
-import { Grid, NumberInput, Text, Select, Stack, Switch, Textarea, TextInput, Image } from '@mantine/core';
+import { Grid, NumberInput, Text, Select, Stack, Switch, Textarea, TextInput, Image, SimpleGrid, Paper, ActionIcon } from '@mantine/core';
 import { useForm } from '@mantine/form';
 
 import { useEffect, useState } from 'react';
 import { inventoryUnits, partCategories } from '../data';
 import { Dropzone, FileWithPath, IMAGE_MIME_TYPE } from '@mantine/dropzone';
-import { Carousel } from '@mantine/carousel';
+
 import { useMutation } from '@apollo/client/react';
 import { CREATE_PART, UPDATE_PART } from '@/graphql/mutations/parts';
 import { useCloudinaryUpload } from '@/hooks/useCloudinaryUpload';
@@ -56,14 +56,14 @@ export function InventoryForm({ mode, data, onClose, onSubmittingChange }: Inven
 			brand: (val) => (!val ? 'Brand is required' : null),
 			condition: (val) => (!val ? 'Condition is required' : null),
 			unit: (val) => (!val ? 'Unit is required' : null),
-			stock: (val: number) => (!val ? 'Stock is required' : null),
-			reorderLevel: (val: number) => (val < 0 ? 'Reorder level cannot be negative' : null),
+			stock: (val) => (mode === 'create' && !val ? 'Stock is required' : null),
+			reorderLevel: (val: number) => (!val ? 'Reorder Level is required' : null),
 			price: (val: number) => (!val ? 'Price is required' : null),
 		},
 	});
 
 	const [images, setImages] = useState<FileWithPath[]>([]);
-	const [previews, setPreviews] = useState<string[]>([]);
+	const [existingImages, setExistingImages] = useState<(string | { url: string; alt?: string })[]>(data?.images ?? []);
 
 	const { uploadFile } = useCloudinaryUpload();
 
@@ -114,19 +114,45 @@ export function InventoryForm({ mode, data, onClose, onSubmittingChange }: Inven
 		if (!form.isValid() || !data?._id) return;
 
 		try {
-			// Upload images to Cloudinary
+			// Upload only new images to Cloudinary
 			const uploadedImages = await Promise.all(
 				images.map(async (file) => {
 					const url = await uploadFile(file, 'parts');
 					return url ? { url, alt: file.name } : null;
 				})
 			);
-			const validImages = uploadedImages.filter((img) => img !== null);
 
+			const newImages = uploadedImages.filter((img) => img !== null);
+
+			// Merge existing + new
+			const finalImages = [...existingImages.map((img) => (typeof img === 'string' ? { url: img, alt: '' } : { url: img.url, alt: img.alt || '' })), ...newImages];
+
+			// Sanitize form values
+			const sanitizedValues = {
+				...form.values,
+				name: form.values.name.trim(),
+				description: form.values.description?.trim() || null,
+				category: form.values.category.trim(),
+				brand: form.values.brand.trim(),
+				condition: form.values.condition.toLowerCase(),
+				unit: form.values.unit.trim(),
+				reorderLevel: Number(form.values.reorderLevel) || 0,
+				price: Number(form.values.price),
+				isActive: Boolean(form.values.isActive),
+			};
+
+			// exclude stock from update
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			const { stock, ...rest } = form.values; // exclude stock
+			const { stock, ...rest } = sanitizedValues;
+
 			const result = await updatePart({
-				variables: { id: data._id, input: { ...rest, images: validImages } },
+				variables: {
+					id: data._id,
+					input: {
+						...rest,
+						images: finalImages, // ✅ send both remaining existing + new
+					},
+				},
 			});
 
 			setTimeout(() => {
@@ -145,15 +171,6 @@ export function InventoryForm({ mode, data, onClose, onSubmittingChange }: Inven
 			onSubmittingChange?.(false);
 		}
 	};
-
-	useEffect(() => {
-		const newPreviews = images.map((file) => URL.createObjectURL(file));
-		setPreviews(newPreviews);
-
-		return () => {
-			newPreviews.forEach((url) => URL.revokeObjectURL(url));
-		};
-	}, [images]);
 
 	useEffect(() => {
 		const handleSubmit = async () => {
@@ -184,6 +201,175 @@ export function InventoryForm({ mode, data, onClose, onSubmittingChange }: Inven
 
 	return (
 		<Stack gap='md'>
+			{/* Images */}
+			{mode === 'view' ? (
+				existingImages.length > 0 ? (
+					<SimpleGrid
+						cols={{ base: 1, sm: 4 }}
+						mt='md'
+					>
+						{existingImages.map((img, i) => {
+							const src = typeof img === 'string' ? img : img.url;
+							const alt = typeof img === 'string' ? data?.name : img.alt || `Part Image ${i + 1}`;
+
+							return (
+								<Image
+									key={i}
+									src={src}
+									alt={alt}
+									radius='md'
+									height={120}
+									fit='cover'
+									style={{
+										border: '1px solid var(--mantine-color-gray-3)',
+										padding: '8px',
+										objectFit: 'contain',
+									}}
+								/>
+							);
+						})}
+					</SimpleGrid>
+				) : (
+					<Paper
+						shadow='md'
+						radius='md'
+						withBorder
+						p='xl'
+						mb='md'
+					>
+						<Text
+							c='dimmed'
+							ta='center'
+							size='lg'
+						>
+							No images available
+						</Text>
+					</Paper>
+				)
+			) : (
+				<>
+					<Dropzone
+						onDrop={(files) => setImages((prev) => [...prev, ...files])}
+						accept={IMAGE_MIME_TYPE}
+						multiple
+						maxSize={5 * 1024 ** 2} // 5MB
+					>
+						<div>
+							<Text
+								size='xl'
+								inline
+							>
+								Drag images here or click to select files
+							</Text>
+							<Text
+								size='sm'
+								c='dimmed'
+								inline
+								mt={7}
+							>
+								Attach as many files as you like, each file should not exceed 5mb
+							</Text>
+						</div>
+					</Dropzone>
+
+					{/* Current Images (removable) */}
+					{existingImages.length > 0 && (
+						<>
+							<Text
+								size='sm'
+								fw={500}
+								mt='md'
+							>
+								Current Images
+							</Text>
+							<SimpleGrid
+								cols={{ base: 1, sm: 4 }}
+								mt='sm'
+							>
+								{existingImages.map((img, i) => {
+									const src = typeof img === 'string' ? img : img.url;
+									const alt = typeof img === 'string' ? data?.name : img.alt || `Part Image ${i + 1}`;
+
+									return (
+										<div
+											key={`existing-${i}`}
+											style={{ position: 'relative' }}
+										>
+											<Image
+												src={src}
+												alt={alt}
+												radius='md'
+												height={120}
+												fit='cover'
+												style={{
+													border: '1px solid var(--mantine-color-gray-3)',
+													padding: '8px',
+													objectFit: 'contain',
+												}}
+											/>
+											<ActionIcon
+												color='red'
+												variant='filled'
+												size='sm'
+												style={{ position: 'absolute', top: 5, right: 5 }}
+												onClick={() => setExistingImages((prev) => prev.filter((_, idx) => idx !== i))}
+											>
+												✕
+											</ActionIcon>
+										</div>
+									);
+								})}
+							</SimpleGrid>
+						</>
+					)}
+
+					{/* New Uploads */}
+					{images.length > 0 && (
+						<>
+							<Text
+								size='sm'
+								fw={500}
+								mt='md'
+							>
+								New Uploads
+							</Text>
+							<SimpleGrid
+								cols={{ base: 1, sm: 4 }}
+								mt='sm'
+							>
+								{images.map((file, i) => {
+									const imageUrl = URL.createObjectURL(file);
+									return (
+										<div
+											key={`new-${i}`}
+											style={{ position: 'relative' }}
+										>
+											<Image
+												src={imageUrl}
+												alt={file.name}
+												radius='md'
+												height={120}
+												fit='cover'
+												onLoad={() => URL.revokeObjectURL(imageUrl)}
+											/>
+											<ActionIcon
+												color='red'
+												variant='filled'
+												size='sm'
+												style={{ position: 'absolute', top: 5, right: 5 }}
+												onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
+											>
+												✕
+											</ActionIcon>
+										</div>
+									);
+								})}
+							</SimpleGrid>
+						</>
+					)}
+				</>
+			)}
+
 			{/* Name + Category + Brand */}
 			<Grid>
 				<Grid.Col span={6}>
@@ -269,6 +455,7 @@ export function InventoryForm({ mode, data, onClose, onSubmittingChange }: Inven
 						onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
 							e.target.value = e.target.value.replace(/[^0-9.,]/g, '');
 						}}
+						disabled={mode === 'view'}
 					/>
 				</Grid.Col>
 			</Grid>
@@ -276,7 +463,7 @@ export function InventoryForm({ mode, data, onClose, onSubmittingChange }: Inven
 			{/* Description */}
 			<Textarea
 				label='Description'
-				placeholder='Enter part description'
+				placeholder={mode !== 'view' ? 'Part description (optional)' : 'N/A'}
 				autosize
 				minRows={2}
 				disabled={mode === 'view'}
@@ -288,56 +475,6 @@ export function InventoryForm({ mode, data, onClose, onSubmittingChange }: Inven
 					label='Active'
 					{...form.getInputProps('isActive', { type: 'checkbox' })}
 				/>
-			)}
-
-			{/* Image Upload */}
-			{mode !== 'view' && (
-				<>
-					<Dropzone
-						onDrop={setImages}
-						accept={IMAGE_MIME_TYPE}
-						multiple
-						maxSize={5 * 1024 ** 2} // 5MB
-					>
-						<div>
-							<Text
-								size='xl'
-								inline
-							>
-								Drag images here or click to select files
-							</Text>
-							<Text
-								size='sm'
-								c='dimmed'
-								inline
-								mt={7}
-							>
-								Attach as many files as you like, each file should not exceed 5MB
-							</Text>
-						</div>
-					</Dropzone>
-
-					{previews.length > 0 && (
-						<Carousel
-							withIndicators
-							height={200}
-							slideSize={{ base: '100%', sm: '50%', md: '33.333333%' }}
-							slideGap={{ base: 0, sm: 'md' }}
-							emblaOptions={{ loop: true, align: 'start' }}
-							mt='xl'
-						>
-							{previews.map((src, i) => (
-								<Carousel.Slide key={i}>
-									<Image
-										src={src}
-										alt={`Preview ${i}`}
-										style={{ width: '100%', height: 200, objectFit: 'cover' }}
-									/>
-								</Carousel.Slide>
-							))}
-						</Carousel>
-					)}
-				</>
 			)}
 		</Stack>
 	);

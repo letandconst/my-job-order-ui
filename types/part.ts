@@ -1,7 +1,7 @@
 export interface Part {
 	_id: string;
 	name: string;
-	description: string;
+	description: string | null;
 	category: string;
 	brand: string;
 	condition: string;
