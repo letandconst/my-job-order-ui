@@ -2,9 +2,8 @@ import { Badge, Select } from '@mantine/core';
 import { IconChevronDown } from '@tabler/icons-react';
 
 export const partsColumns = [
-	{ accessor: 'name', header: 'Name' },
-	{ accessor: 'category', header: 'Category' },
-	{ accessor: 'brand', header: 'Brand' },
+	{ accessor: 'name', header: 'Name', sortable: true },
+
 	{
 		accessor: 'condition',
 		header: 'Condition',
@@ -24,6 +23,7 @@ export const partsColumns = [
 		),
 	},
 	{ accessor: 'stock', header: 'Stock' },
+
 	{ accessor: 'unit', header: 'Unit' },
 	{ accessor: 'price', header: 'Price' },
 	{
@@ -43,5 +43,9 @@ export const partsColumns = [
 				rightSection={<IconChevronDown size={16} />}
 			/>
 		),
+	},
+	{
+		accessor: 'lastTransactionAt',
+		header: 'Last Transaction',
 	},
 ];
