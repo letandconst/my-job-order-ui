@@ -1,54 +1,68 @@
-'use client';
-
-import { ApolloClient, ApolloLink, HttpLink, InMemoryCache, Observable, gql } from '@apollo/client';
+import { ApolloClient, InMemoryCache, HttpLink, ApolloLink, Observable } from '@apollo/client';
 import { ErrorLink } from '@apollo/client/link/error';
 import { CombinedGraphQLErrors, CombinedProtocolErrors } from '@apollo/client/errors';
-import { SetContextLink } from '@apollo/client/link/context';
 import { REFRESH_TOKEN_MUTATION } from '@/graphql/mutations/auth';
 import Router from 'next/router';
 
-// Create the main HTTP link
-const httpLink = new HttpLink({
-	uri: process.env.NEXT_PUBLIC_BACKEND + '/graphql',
-	credentials: 'include',
-});
+// --------------------
+// Token Refresh Helpers
+// --------------------
+let isRefreshing = false;
+let pendingRequests: (() => void)[] = [];
 
-// Create the SetContextLink
-const authLink = new SetContextLink((prevContext, operation) => {
-	return {
-		headers: {
-			...prevContext.headers,
-		},
-	};
-});
+const resolvePendingRequests = () => {
+	pendingRequests.forEach((cb) => cb());
+	pendingRequests = [];
+};
 
-// Create the ErrorLink
+let apolloClient: ApolloClient | null = null;
+// --------------------
+// Error Link
+// --------------------
 const errorLink = new ErrorLink(({ error, operation, forward }) => {
 	if (CombinedGraphQLErrors.is(error)) {
 		for (const err of error.errors) {
 			console.log(`[GraphQL error]: Message: ${err.message}, Path: ${err.path}`);
 
-			// Handle expired or invalid access token
-			if (err.message.includes('Session expired') || err.message.includes('invalid token')) {
-				// Use forward inside an observable to retry the operation
-				return new ApolloLink((op, fwd) => {
+			if (err.extensions?.code === 'UNAUTHENTICATED') {
+				if (!isRefreshing) {
+					isRefreshing = true;
+
 					return new Observable((observer) => {
-						apolloClient
+						apolloClient!
 							.mutate({ mutation: REFRESH_TOKEN_MUTATION })
 							.then(() => {
-								const subscriber = fwd(op).subscribe({
+								isRefreshing = false;
+								resolvePendingRequests();
+
+								const subscriber = forward(operation).subscribe({
 									next: (result) => observer.next(result),
 									error: (err) => observer.error(err),
 									complete: () => observer.complete(),
 								});
+
 								return () => subscriber.unsubscribe();
 							})
 							.catch(() => {
-								Router.push('/auth/login'); // Redirect if refresh fails
+								isRefreshing = false;
+								alert('Your session has expired. Please log in again.');
+								Router.push('/auth/login');
 								observer.complete();
 							});
 					});
-				}).request(operation, forward);
+				}
+
+				// Queue requests until refresh finishes
+				return new Observable((observer) => {
+					pendingRequests.push(() => {
+						const subscriber = forward(operation).subscribe({
+							next: (result) => observer.next(result),
+							error: (err) => observer.error(err),
+							complete: () => observer.complete(),
+						});
+						return () => subscriber.unsubscribe();
+					});
+				});
 			}
 		}
 	} else if (CombinedProtocolErrors.is(error)) {
@@ -60,8 +74,20 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
 	}
 });
 
-// Combine the links into a single chain
-export const apolloClient = new ApolloClient({
-	link: ApolloLink.from([authLink, errorLink, httpLink]),
+// --------------------
+// Http Link
+// --------------------
+const httpLink = new HttpLink({
+	uri: process.env.NEXT_PUBLIC_BACKEND + '/graphql',
+	credentials: 'include',
+});
+
+// --------------------
+// Apollo Client
+// --------------------
+apolloClient = new ApolloClient({
+	link: ApolloLink.from([errorLink, httpLink]),
 	cache: new InMemoryCache(),
 });
+
+export default apolloClient;
