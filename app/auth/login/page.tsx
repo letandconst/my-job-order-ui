@@ -79,6 +79,7 @@ export default function LoginPage() {
 		} catch (error: unknown) {
 			const message = error instanceof Error ? error.message : 'Something went wrong';
 			notify('Error', message, 'red');
+			form.reset();
 		}
 	};
 
