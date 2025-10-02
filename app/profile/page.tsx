@@ -81,7 +81,6 @@ export default function ProfilePage() {
 		<Box
 			style={{
 				margin: '0 auto',
-				padding: '30px',
 				bg: 'white',
 				maxWidth: '1200px',
 			}}
