@@ -1,4 +1,3 @@
-import { toDisplayDate } from '@/utils/dateFormatter';
 import { Badge, Group } from '@mantine/core';
 import Image from 'next/image';
 import portraitImg from '@/public/Portrait.png';
@@ -17,12 +16,10 @@ export const mechanicColumns = [
 				priority={false}
 			/>
 		),
-		sortable: false,
 	},
 	{
 		accessor: 'name',
 		title: 'Name',
-		sortable: true,
 	},
 	{
 		accessor: 'phoneNumber',
@@ -52,11 +49,5 @@ export const mechanicColumns = [
 	{
 		accessor: 'address',
 		title: 'Address',
-	},
-	{
-		accessor: 'dateJoined',
-		title: 'Date Joined',
-		sortable: true,
-		render: (row: { dateJoined: string | Date | undefined }) => toDisplayDate(row.dateJoined),
 	},
 ];

@@ -2,41 +2,49 @@ import { useEffect, useRef, useState } from 'react';
 import { TextInput, Textarea, Stack, Grid, Group, Badge, Text, Avatar, ActionIcon, rem } from '@mantine/core';
 import { TagsInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useMutation } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { CREATE_MECHANIC, UPDATE_MECHANIC } from '@/graphql/mutations/mechanic';
-import { CreateMechanicResponse, Mechanic, UpdateMechanicResponse } from '@/types/mechanic';
+import { CreateMechanicResponse, ListMechanicResponse, UpdateMechanicResponse } from '@/types/mechanic';
 import { IconPencil } from '@tabler/icons-react';
 import { useCloudinaryUpload } from '@/hooks/useCloudinaryUpload';
 import { notify } from '@/utils/notifications';
 
 import { toInputDate, toDisplayDate } from '@/utils/dateFormatter';
-import { LIST_MECHANICS } from '@/graphql/queries/mechanics';
+import { LIST_MECHANIC, LIST_MECHANICS } from '@/graphql/queries/mechanics';
+import { ModalMode } from '@/types/modal';
 
 interface MechanicFormProps {
-	mode: 'create' | 'edit' | 'view';
-	data?: Mechanic;
+	mode: ModalMode;
+	id?: string;
 	onClose?: () => void;
-	onSubmittingChange?: (loading: boolean) => void;
+	onSubmittingChange?: (submitting: boolean) => void;
 }
 
-export function MechanicForm({ mode, data, onClose, onSubmittingChange }: MechanicFormProps) {
+export function MechanicForm({ mode, id, onClose, onSubmittingChange }: MechanicFormProps) {
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const [avatarFile, setAvatarFile] = useState<File | null>(null);
-	const [avatarPreview, setAvatarPreview] = useState<string>(data?.avatar ?? '');
+	const [avatarPreview, setAvatarPreview] = useState<string>('');
 	const { uploadFile } = useCloudinaryUpload();
+
+	const { data } = useQuery<ListMechanicResponse>(LIST_MECHANIC, {
+		variables: { mechanicId: id },
+		skip: !id || mode === 'create',
+	});
+
+	const mechanic = data?.mechanic;
 
 	const form = useForm({
 		initialValues: {
-			name: data?.name ?? '',
-			phoneNumber: data?.phoneNumber ?? '',
-			birthday: toInputDate(data?.birthday) ?? '',
-			address: data?.address ?? '',
-			emergencyContactName: data?.emergencyContact?.name ?? '',
-			emergencyContactPhone: data?.emergencyContact?.phoneNumber ?? '',
-			bio: data?.bio ?? '',
-			specialties: data?.specialties ?? [],
-			avatar: data?.avatar ?? '',
-			dateJoined: toInputDate(data?.dateJoined) ?? '',
+			name: '',
+			phoneNumber: '',
+			birthday: '',
+			address: '',
+			emergencyContactName: '',
+			emergencyContactPhone: '',
+			bio: '',
+			specialties: [] as string[],
+			avatar: '',
+			dateJoined: '',
 		},
 		validate: {
 			name: (val) => (val.trim().length < 2 ? 'Name must be at least 3 characters' : null),
@@ -63,6 +71,25 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 	const [updateMechanic] = useMutation<UpdateMechanicResponse>(UPDATE_MECHANIC, {
 		refetchQueries: [{ query: LIST_MECHANICS }],
 	});
+
+	useEffect(() => {
+		if (mechanic) {
+			form.setValues({
+				name: mechanic.name ?? '',
+				phoneNumber: mechanic.phoneNumber ?? '',
+				birthday: toInputDate(mechanic.birthday) ?? '',
+				address: mechanic.address ?? '',
+				emergencyContactName: mechanic.emergencyContact?.name ?? '',
+				emergencyContactPhone: mechanic.emergencyContact?.phoneNumber ?? '',
+				bio: mechanic.bio ?? '',
+				specialties: mechanic.specialties ?? [],
+				avatar: mechanic.avatar ?? '',
+				dateJoined: toInputDate(mechanic.dateJoined) ?? '',
+			});
+			setAvatarPreview(mechanic.avatar ?? '');
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [mechanic]);
 
 	useEffect(() => {
 		const handleFormSubmit = async () => {
@@ -125,7 +152,7 @@ export function MechanicForm({ mode, data, onClose, onSubmittingChange }: Mechan
 	const handleUpdate = async (avatarUrl: string) => {
 		const result = await updateMechanic({
 			variables: {
-				updateMechanicId: data!._id,
+				updateMechanicId: id,
 				phoneNumber: form.values.phoneNumber,
 				address: form.values.address,
 				emergencyContactName: form.values.emergencyContactName,

@@ -1,7 +1,7 @@
 import { ModalMode } from '@/types/modal';
 
 export interface Mechanic {
-	_id: string;
+	id: string;
 	name: string;
 	phoneNumber: string;
 	address: string;
@@ -17,11 +17,11 @@ export interface Mechanic {
 }
 
 export interface ListMechanicsResponse {
-	listMechanics: {
-		data: Mechanic[];
-		message: string;
-		statusCode: number;
-	};
+	mechanics: Mechanic[];
+}
+
+export interface ListMechanicResponse {
+	mechanic: Mechanic;
 }
 
 export interface MechanicFormProps {
