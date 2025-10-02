@@ -34,7 +34,7 @@ export default function ResetPasswordPage() {
 	const handleSubmit = async (values: typeof form.values) => {
 		if (!token) {
 			setTokenValid(false);
-			notify('Error', 'Something went wrong.', 'red');
+			notify('Error', 'Something went wrong. Please try again.', 'red');
 			return;
 		}
 
@@ -45,7 +45,7 @@ export default function ResetPasswordPage() {
 
 			const res = data?.resetPassword;
 			if (!res) {
-				notify('Error', 'Something went wrong.', 'red');
+				notify('Error', 'Something went wrong. Please try again.', 'red');
 				return;
 			}
 

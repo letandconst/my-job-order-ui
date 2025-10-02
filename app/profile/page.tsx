@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { Box, Grid, Avatar, Button, TextInput, PasswordInput, SimpleGrid, Group } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { User, useUser } from '@/context/UserContext';
+import { useUser } from '@/hooks/useUser';
 import { notify } from '@/utils/notifications';
 import { useMutation } from '@apollo/client/react';
 import { UPDATE_PROFILE_MUTATION } from '@/graphql/mutations/auth';
@@ -13,9 +13,7 @@ import { PageHeader } from '@/components/PageHeader/PageHeader';
 
 interface UpdateProfileResponse {
 	updateProfile: {
-		data: User;
 		message: string;
-		statusCode: number;
 	};
 }
 
@@ -43,15 +41,9 @@ export default function ProfilePage() {
 
 		// Upload avatar first using the hook
 		if (avatarFile) {
-			try {
-				avatarUrl = await uploadFile(avatarFile, 'avatars');
-				if (!avatarUrl) {
-					notify('Error', 'Avatar upload failed', 'red');
-					return;
-				}
-			} catch (err: unknown) {
-				const message = err instanceof Error ? err.message : 'Unknown error';
-				notify('Error', `Avatar upload failed: ${message}`, 'red');
+			avatarUrl = await uploadFile(avatarFile, 'avatars');
+			if (!avatarUrl) {
+				notify('Error', 'Avatar upload failed', 'red');
 				return;
 			}
 		}
@@ -68,23 +60,17 @@ export default function ProfilePage() {
 			const res = data?.updateProfile;
 
 			if (!res) {
-				notify('Error', 'No response from server', 'red');
+				notify('Error', 'Something went wrong. Please try again.', 'red');
 				return;
 			}
+			notify('Success', res.message);
+			refetchUser();
 
-			if (res.statusCode === 200) {
-				notify('Success', res.message);
-
-				refetchUser();
-
-				// Reset password field and file input
-				form.setFieldValue('password', '');
-				setAvatarFile(null);
-				setAvatarPreview(null);
-				if (fileInputRef.current) fileInputRef.current.value = '';
-			} else {
-				notify('Error', res.message || 'Profile update failed', 'red');
-			}
+			// Reset password field and file input
+			form.setFieldValue('password', '');
+			setAvatarFile(null);
+			setAvatarPreview(null);
+			if (fileInputRef.current) fileInputRef.current.value = '';
 		} catch (err: unknown) {
 			const message = err instanceof Error ? err.message : 'Profile update failed';
 			notify('Error', message, 'red');

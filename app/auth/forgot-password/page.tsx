@@ -42,14 +42,14 @@ export default function ForgotPasswordPage() {
 			const res = (data as ForgotPasswordResponse | undefined)?.forgotPassword;
 
 			if (!res) {
-				notify('Error', 'Something went wrong', 'red');
+				notify('Error', 'Something went wrong. Please try again.', 'red');
 				return;
 			}
 
 			notify('Success', res.message);
 			form.reset();
 		} catch (error: unknown) {
-			const message = error instanceof Error ? error.message : 'Something went wrong';
+			const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
 			notify('Error', message, 'red');
 		}
 	};

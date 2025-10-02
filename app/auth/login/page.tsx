@@ -20,7 +20,7 @@ interface LoginResponse {
 			firstName: string;
 			lastName: string;
 			avatar: string;
-			email: string;
+			email: string | null;
 		};
 	};
 }
@@ -77,7 +77,7 @@ export default function LoginPage() {
 				form.reset();
 			}
 		} catch (error: unknown) {
-			const message = error instanceof Error ? error.message : 'Something went wrong';
+			const message = error instanceof Error ? error.message : 'Login failed.';
 			notify('Error', message, 'red');
 			form.reset();
 		}
