@@ -15,7 +15,7 @@ interface ReusableModalProps {
 	size?: MantineSize | string;
 }
 
-export function ReusableModal({ opened, onClose, title, children, showFooter = true, saveButtonText = 'Save', saveButtonColor = 'blue', onSave, size = 'md' }: ReusableModalProps) {
+export function BaseModal({ opened, onClose, title, children, showFooter = true, saveButtonText = 'Save', saveButtonColor = 'blue', onSave, size = 'md' }: ReusableModalProps) {
 	return (
 		<Modal
 			opened={opened}
