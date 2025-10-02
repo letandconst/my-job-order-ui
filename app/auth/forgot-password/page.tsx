@@ -12,15 +12,13 @@ import { notify } from '@/utils/notifications';
 
 interface ForgotPasswordResponse {
 	forgotPassword: {
-		data: string | null;
 		message: string;
-		statusCode: number;
 	};
 }
 
 export default function ForgotPasswordPage() {
 	const router = useRouter();
-	const [forgotPassword, { loading }] = useMutation(FORGOT_PASSWORD_MUTATION);
+	const [forgotPassword, { loading }] = useMutation<ForgotPasswordResponse>(FORGOT_PASSWORD_MUTATION);
 
 	const form = useForm({
 		initialValues: { email: '' },
@@ -37,21 +35,21 @@ export default function ForgotPasswordPage() {
 
 	const handleSubmit = async (values: typeof form.values) => {
 		try {
-			const result = await forgotPassword({ variables: { email: values.email } });
+			const { data } = await forgotPassword({
+				variables: { email: values.email },
+			});
 
-			const data = result.data as ForgotPasswordResponse | undefined;
-			const res = data?.forgotPassword;
+			const res = (data as ForgotPasswordResponse | undefined)?.forgotPassword;
 
-			if (!res) return notify('Error', 'No response from server', 'red');
-
-			if (res.statusCode === 200) {
-				notify('Success', res.message);
-				form.reset();
-			} else {
-				notify('Error', res.message || 'Request failed', 'red');
+			if (!res) {
+				notify('Error', 'Something went wrong', 'red');
+				return;
 			}
-		} catch (err) {
-			const message = err instanceof Error ? err.message : 'Something went wrong';
+
+			notify('Success', res.message);
+			form.reset();
+		} catch (error: unknown) {
+			const message = error instanceof Error ? error.message : 'Something went wrong';
 			notify('Error', message, 'red');
 		}
 	};

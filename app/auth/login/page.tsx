@@ -10,37 +10,24 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import LoadingOverlayWrapper from '@/components/LoadingOverlayWrapper';
-import { useUser } from '@/context/UserContext';
 import { GET_CURRENT_USER } from '@/graphql/queries/users';
 import { LOGIN_MUTATION } from '@/graphql/mutations/auth';
 
 interface LoginResponse {
 	login: {
-		data: {
-			id: string;
+		message: string;
+		user: {
 			firstName: string;
 			lastName: string;
-			username: string;
+			avatar: string;
 			email: string;
-			avatar?: string | null;
-		} | null;
-		message: string;
-		statusCode: number;
+		};
 	};
-}
-
-interface LoginVariables {
-	email?: string | null;
-	username?: string | null;
-	password: string;
 }
 
 export default function LoginPage() {
 	const router = useRouter();
-
-	const { refetchUser } = useUser();
-
-	const [login, { loading }] = useMutation<LoginResponse, LoginVariables>(LOGIN_MUTATION);
+	const [login, { loading }] = useMutation<LoginResponse>(LOGIN_MUTATION);
 
 	const form = useForm({
 		initialValues: {
@@ -70,27 +57,28 @@ export default function LoginPage() {
 		},
 	});
 
-	const handleSubmit = async (values: { identifier: string; password: string }) => {
-		const variables = {
-			email: values.identifier.includes('@') ? values.identifier : null,
-			username: values.identifier.includes('@') ? null : values.identifier,
-			password: values.password,
-		};
+	const handleSubmit = async (values: typeof form.values) => {
+		try {
+			const variables = values.identifier.includes('@') ? { email: values.identifier, username: null, password: values.password } : { username: values.identifier, email: null, password: values.password };
 
-		const result = await login({
-			variables,
-			refetchQueries: [{ query: GET_CURRENT_USER }],
-		});
+			const { data } = await login({
+				variables,
+				refetchQueries: [{ query: GET_CURRENT_USER }],
+				awaitRefetchQueries: true,
+			});
 
-		const res = result.data?.login;
-		if (res?.statusCode === 200) {
-			notify('Welcome', res.message);
-			refetchUser();
+			const res = data?.login;
 
-			router.push('/');
-		} else {
-			notify('Login failed', res?.message || 'Login failed', 'red');
-			form.reset();
+			if (res?.user) {
+				notify('Welcome', res.message || 'Login successful');
+				router.push('/');
+			} else {
+				notify('Login failed', res?.message || 'Incorrect username or password', 'red');
+				form.reset();
+			}
+		} catch (error: unknown) {
+			const message = error instanceof Error ? error.message : 'Something went wrong';
+			notify('Error', message, 'red');
 		}
 	};
 

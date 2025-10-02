@@ -1,21 +1,28 @@
 import { gql } from '@apollo/client';
 
 export const REGISTER_MUTATION = gql`
-	mutation Mutation($firstName: String!, $lastName: String!, $username: String!, $email: String!, $password: String!) {
+	mutation Register($firstName: String!, $lastName: String!, $username: String!, $email: String!, $password: String!) {
 		register(firstName: $firstName, lastName: $lastName, username: $username, email: $email, password: $password) {
-			data
 			message
-			statusCode
+			user {
+				firstName
+				lastName
+			}
 		}
 	}
 `;
 
 export const LOGIN_MUTATION = gql`
-	mutation Login($email: String, $username: String, $password: String!) {
-		login(email: $email, username: $username, password: $password) {
-			data
+	mutation Mutation($password: String!, $username: String, $email: String) {
+		login(password: $password, username: $username, email: $email) {
 			message
-			statusCode
+			token
+			user {
+				firstName
+				lastName
+				email
+				avatar
+			}
 		}
 	}
 `;
@@ -23,9 +30,7 @@ export const LOGIN_MUTATION = gql`
 export const REFRESH_TOKEN_MUTATION = gql`
 	mutation RefreshToken {
 		refreshToken {
-			data
 			message
-			statusCode
 		}
 	}
 `;
@@ -33,9 +38,7 @@ export const REFRESH_TOKEN_MUTATION = gql`
 export const LOGOUT_MUTATION = gql`
 	mutation Logout {
 		logout {
-			data
 			message
-			statusCode
 		}
 	}
 `;
@@ -43,9 +46,7 @@ export const LOGOUT_MUTATION = gql`
 export const FORGOT_PASSWORD_MUTATION = gql`
 	mutation ForgotPassword($email: String!) {
 		forgotPassword(email: $email) {
-			data
 			message
-			statusCode
 		}
 	}
 `;
@@ -53,19 +54,19 @@ export const FORGOT_PASSWORD_MUTATION = gql`
 export const RESET_PASSWORD_MUTATION = gql`
 	mutation ResetPassword($token: String!, $newPassword: String!) {
 		resetPassword(token: $token, newPassword: $newPassword) {
-			data
 			message
-			statusCode
 		}
 	}
 `;
 
 export const UPDATE_PROFILE_MUTATION = gql`
-	mutation UpdateProfile($email: String, $avatar: String, $password: String) {
-		updateProfile(email: $email, avatar: $avatar, password: $password) {
-			data
+	mutation UpdateProfile {
+		updateProfile {
 			message
-			statusCode
+			token
+			user {
+				id
+			}
 		}
 	}
 `;

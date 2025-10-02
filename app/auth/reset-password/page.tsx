@@ -10,7 +10,6 @@ import LoadingOverlayWrapper from '@/components/LoadingOverlayWrapper';
 
 interface ResetPasswordResponse {
 	resetPassword: {
-		statusCode: number;
 		message: string;
 	};
 }
@@ -19,10 +18,10 @@ export default function ResetPasswordPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const token = searchParams.get('token');
-	const [loading, setLoading] = useState<boolean>(false);
+
 	const [tokenValid, setTokenValid] = useState<boolean>(true);
 
-	const [resetPassword] = useMutation(RESET_PASSWORD_MUTATION);
+	const [resetPassword, { loading }] = useMutation<ResetPasswordResponse>(RESET_PASSWORD_MUTATION);
 
 	const form = useForm({
 		initialValues: { password: '', confirmPassword: '' },
@@ -35,35 +34,29 @@ export default function ResetPasswordPage() {
 	const handleSubmit = async (values: typeof form.values) => {
 		if (!token) {
 			setTokenValid(false);
+			notify('Error', 'Something went wrong.', 'red');
 			return;
 		}
 
 		try {
-			setLoading(true);
-			const result = await resetPassword({
+			const { data } = await resetPassword({
 				variables: { token, newPassword: values.password },
 			});
 
-			const data = result.data as ResetPasswordResponse | undefined;
 			const res = data?.resetPassword;
-
-			if (!res) return notify('Error', 'No response from server', 'red');
-
-			if (res.statusCode === 200) {
-				notify('Success', res.message);
-				form.reset();
-
-				setTimeout(() => router.push('/auth/login'), 1000);
-			} else {
-				setTokenValid(false);
-				notify('Error', res.message || 'Failed to reset password', 'red');
+			if (!res) {
+				notify('Error', 'Something went wrong.', 'red');
+				return;
 			}
-		} catch (err) {
-			const message = err instanceof Error ? err.message : 'Something went wrong';
+
+			notify('Success', res.message);
+			form.reset();
+
+			setTimeout(() => router.push('/auth/login'), 1000);
+		} catch (error: unknown) {
+			const message = error instanceof Error ? error.message : 'Something went wrong.';
 			setTokenValid(false);
 			notify('Error', message, 'red');
-		} finally {
-			setLoading(false);
 		}
 	};
 

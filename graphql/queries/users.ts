@@ -1,11 +1,12 @@
 import { gql } from '@apollo/client';
 
 export const GET_CURRENT_USER = gql`
-	query currentUser {
+	query Query {
 		me {
-			data
-			message
-			statusCode
+			firstName
+			lastName
+			email
+			avatar
 		}
 	}
 `;

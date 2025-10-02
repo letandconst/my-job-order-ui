@@ -15,7 +15,6 @@ const resolvePendingRequests = () => {
 	pendingRequests = [];
 };
 
-let apolloClient: ApolloClient | null = null;
 // --------------------
 // Error Link
 // --------------------
@@ -85,9 +84,7 @@ const httpLink = new HttpLink({
 // --------------------
 // Apollo Client
 // --------------------
-apolloClient = new ApolloClient({
+export const apolloClient = new ApolloClient({
 	link: ApolloLink.from([errorLink, httpLink]),
 	cache: new InMemoryCache(),
 });
-
-export default apolloClient;
