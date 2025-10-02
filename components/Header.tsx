@@ -1,7 +1,7 @@
 'use client';
-import { Group, ActionIcon, Menu, Avatar, useMantineColorScheme, Box } from '@mantine/core';
+import { Group, ActionIcon, Menu, Avatar, useMantineColorScheme, Box, Skeleton } from '@mantine/core';
 import { IconMenu2, IconSun, IconMoonStars, IconBell, IconUser, IconLogout } from '@tabler/icons-react';
-import { useUser } from '@/context/UserContext';
+import { useUser } from '@/hooks/useUser';
 import { useApolloClient, useMutation } from '@apollo/client/react';
 import { LOGOUT_MUTATION } from '@/graphql/mutations/auth';
 import { useRouter } from 'next/navigation';
@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 export function HeaderBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 	const { colorScheme, toggleColorScheme } = useMantineColorScheme();
-	const { user, loading, refetchUser } = useUser();
+	const { user, refetchUser, loading } = useUser();
 	const client = useApolloClient();
 	const router = useRouter();
 
@@ -25,8 +25,6 @@ export function HeaderBar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
 	const handleLogout = async () => {
 		await logoutMutation();
 	};
-
-	if (loading) return null;
 
 	return (
 		<Box
@@ -64,21 +62,23 @@ export function HeaderBar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
 					width={200}
 				>
 					<Menu.Target>
-						<Avatar
-							radius='xl'
-							color='blue'
-							src={user?.avatar || null}
-							alt={`${user?.firstName} ${user?.lastName}`}
-							name={`${user?.firstName} ${user?.lastName}`}
-							style={{
-								cursor: 'pointer',
-							}}
-							styles={{
-								image: {
-									height: 'auto',
-								},
-							}}
-						/>
+						{loading ? (
+							<Skeleton
+								height='38px'
+								width='38px'
+								radius='xl'
+							/>
+						) : (
+							<Avatar
+								radius='xl'
+								color='blue'
+								src={user?.avatar || undefined}
+								alt={`${user?.firstName ?? ''} ${user?.lastName ?? ''}`}
+								name={`${user?.firstName ?? ''} ${user?.lastName ?? ''}`}
+								style={{ cursor: 'pointer' }}
+								styles={{ image: { height: 'auto' } }}
+							/>
+						)}
 					</Menu.Target>
 
 					<Menu.Dropdown>
