@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Box, Grid, Avatar, Button, TextInput, PasswordInput, SimpleGrid, Group } from '@mantine/core';
+import { useState, useRef, useEffect } from 'react';
+import { Box, Grid, Avatar, Button, TextInput, PasswordInput, SimpleGrid, Group, Skeleton } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useUser } from '@/hooks/useUser';
 import { notify } from '@/utils/notifications';
@@ -10,6 +10,7 @@ import { UPDATE_PROFILE_MUTATION } from '@/graphql/mutations/auth';
 import { useCloudinaryUpload } from '@/hooks/useCloudinaryUpload';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
+import LoadingOverlayWrapper from '@/components/LoadingOverlayWrapper';
 
 interface UpdateProfileResponse {
 	updateProfile: {
@@ -29,7 +30,7 @@ export default function ProfilePage() {
 
 	const form = useForm({
 		initialValues: {
-			email: user?.email || '',
+			email: '',
 			password: '',
 		},
 	});
@@ -39,7 +40,7 @@ export default function ProfilePage() {
 
 		let avatarUrl: string | undefined;
 
-		// Upload avatar first using the hook
+		// Upload avatar first
 		if (avatarFile) {
 			avatarUrl = await uploadFile(avatarFile, 'avatars');
 			if (!avatarUrl) {
@@ -77,6 +78,13 @@ export default function ProfilePage() {
 		}
 	};
 
+	useEffect(() => {
+		if (user) {
+			form.setFieldValue('email', user.email ?? '');
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [user]);
+
 	return (
 		<Box
 			style={{
@@ -94,13 +102,22 @@ export default function ProfilePage() {
 						span={2}
 						style={{ display: 'flex', flexDirection: 'column' }}
 					>
-						<Avatar
-							src={avatarRemoved ? null : avatarPreview || user?.avatar}
-							alt='User Avatar'
-							size={240}
-							radius='xl'
-							name={`${user?.firstName} ${user?.lastName}`}
-						/>
+						{!user ? (
+							<Skeleton
+								height='250px'
+								width='250px'
+								radius='xl'
+							/>
+						) : (
+							<Avatar
+								src={avatarRemoved ? null : avatarPreview || user?.avatar}
+								alt='User Avatar'
+								size={240}
+								radius='xl'
+								name={`${user?.firstName} ${user?.lastName}`}
+							/>
+						)}
+
 						<Button
 							variant='outline'
 							mt='md'
@@ -148,19 +165,19 @@ export default function ProfilePage() {
 						>
 							<TextInput
 								label='First Name'
-								value={user?.firstName}
+								value={user?.firstName ?? ''}
 								disabled
 							/>
 							<TextInput
 								label='Last Name'
-								value={user?.lastName}
+								value={user?.lastName ?? ''}
 								disabled
 							/>
 						</SimpleGrid>
 
 						<TextInput
 							label='Username'
-							value={user?.username}
+							value={user?.username ?? ''}
 							mt='md'
 							disabled
 						/>
