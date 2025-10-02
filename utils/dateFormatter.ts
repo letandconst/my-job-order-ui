@@ -11,7 +11,11 @@ export function toInputDate(date?: string | Date): string {
 /**
  * Format a date string for display (e.g. "March 15, 2020")
  */
-export function toDisplayDate(date?: string | Date, format = 'MMMM D, YYYY'): string {
+export function toDisplayDate(date?: string | number | Date, format = 'MMMM D, YYYY'): string {
 	if (!date) return '';
-	return dayjs(date).format(format);
+
+	// Convert string numbers ("1642636800000") into actual numbers
+	const parsedDate = typeof date === 'string' && /^\d+$/.test(date) ? Number(date) : date;
+
+	return dayjs(parsedDate).format(format);
 }
