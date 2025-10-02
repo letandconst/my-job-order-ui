@@ -10,7 +10,6 @@ import { UPDATE_PROFILE_MUTATION } from '@/graphql/mutations/auth';
 import { useCloudinaryUpload } from '@/hooks/useCloudinaryUpload';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
-import LoadingOverlayWrapper from '@/components/LoadingOverlayWrapper';
 
 interface UpdateProfileResponse {
 	updateProfile: {
