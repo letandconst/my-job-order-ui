@@ -67,9 +67,11 @@ export function MechanicForm({ mode, id, onClose, onSubmittingChange }: Mechanic
 
 	const [createMechanic] = useMutation<CreateMechanicResponse>(CREATE_MECHANIC, {
 		refetchQueries: [{ query: LIST_MECHANICS }],
+		awaitRefetchQueries: true,
 	});
 	const [updateMechanic] = useMutation<UpdateMechanicResponse>(UPDATE_MECHANIC, {
 		refetchQueries: [{ query: LIST_MECHANICS }],
+		awaitRefetchQueries: true,
 	});
 
 	useEffect(() => {
@@ -102,7 +104,7 @@ export function MechanicForm({ mode, id, onClose, onSubmittingChange }: Mechanic
 				const avatarUrl = await uploadAvatarIfNeeded();
 				if (mode === 'create') {
 					await handleCreate(avatarUrl);
-				} else if (mode === 'edit' && data?._id) {
+				} else if (mode === 'edit' && id) {
 					await handleUpdate(avatarUrl);
 				}
 				onClose?.();
@@ -137,38 +139,57 @@ export function MechanicForm({ mode, id, onClose, onSubmittingChange }: Mechanic
 	// --- Helpers --- //
 
 	const handleCreate = async (avatarUrl: string) => {
-		const result = await createMechanic({
-			variables: { input: { ...form.values, avatar: avatarUrl } },
-		});
-		setTimeout(() => {
-			if (result.data?.createMechanic?.statusCode === 200) {
-				notify('Success', 'Mechanic created successfully', 'green');
+		try {
+			const { data } = await createMechanic({
+				variables: {
+					input: {
+						...form.values,
+						avatar: avatarUrl,
+					},
+				},
+			});
+
+			if (data?.createMechanic) {
+				setTimeout(() => {
+					notify('Success', 'Mechanic created successfully', 'green');
+				}, 200);
 			} else {
-				notify('Error', result.data?.createMechanic?.message || 'Failed to create mechanic', 'red');
+				notify('Error', 'Failed to create mechanic', 'red');
 			}
-		}, 1000);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : 'Unknown error';
+			notify('Error', `Something went wrong: ${message}`, 'red');
+		}
 	};
 
 	const handleUpdate = async (avatarUrl: string) => {
-		const result = await updateMechanic({
-			variables: {
-				updateMechanicId: id,
-				phoneNumber: form.values.phoneNumber,
-				address: form.values.address,
-				emergencyContactName: form.values.emergencyContactName,
-				emergencyContactPhone: form.values.emergencyContactPhone,
-				bio: form.values.bio,
-				avatar: avatarUrl,
-				specialties: form.values.specialties,
-			},
-		});
-		setTimeout(() => {
-			if (result.data?.updateMechanic?.statusCode === 200) {
-				notify('Success', 'Mechanic updated successfully', 'green');
+		try {
+			const { data } = await updateMechanic({
+				variables: {
+					input: {
+						id,
+						phoneNumber: form.values.phoneNumber,
+						address: form.values.address,
+						emergencyContactName: form.values.emergencyContactName,
+						emergencyContactPhone: form.values.emergencyContactPhone,
+						bio: form.values.bio,
+						avatar: avatarUrl,
+						specialties: form.values.specialties,
+					},
+				},
+			});
+
+			if (data?.updateMechanic) {
+				setTimeout(() => {
+					notify('Success', 'Mechanic updated successfully', 'green');
+				}, 200);
 			} else {
-				notify('Error', result.data?.updateMechanic?.message || 'Failed to update mechanic', 'red');
+				notify('Error', 'Failed to update mechanic', 'red');
 			}
-		});
+		} catch (err) {
+			const message = err instanceof Error ? err.message : 'Unknown error';
+			notify('Error', `Something went wrong: ${message}`, 'red');
+		}
 	};
 
 	return (

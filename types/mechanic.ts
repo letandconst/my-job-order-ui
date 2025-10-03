@@ -14,6 +14,7 @@ export interface Mechanic {
 		phoneNumber: string;
 	};
 	dateJoined: string;
+	createdAt: string;
 }
 
 export interface ListMechanicsResponse {
@@ -42,14 +43,6 @@ export interface MechanicFormProps {
 	};
 }
 
-export interface CreateMechanicResponse {
-	createMechanic: {
-		data: Mechanic;
-		message: string;
-		statusCode: number;
-	};
-}
-
 export interface MechanicFormState {
 	name: string;
 	phoneNumber: string;
@@ -61,10 +54,10 @@ export interface MechanicFormState {
 	specialties: string[];
 }
 
+export interface CreateMechanicResponse {
+	createMechanic: Mechanic;
+}
+
 export interface UpdateMechanicResponse {
-	updateMechanic: {
-		data: Mechanic;
-		message: string;
-		statusCode: number;
-	};
+	updateMechanic: Mechanic;
 }

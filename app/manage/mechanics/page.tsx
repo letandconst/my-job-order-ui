@@ -45,8 +45,10 @@ export default function MechanicsPage() {
 
 	useEffect(() => {
 		if (data?.mechanics) {
-			setMechanics(data.mechanics);
-			setFilteredMechanics(data.mechanics);
+			const sorted = [...data.mechanics].sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+
+			setMechanics(sorted);
+			setFilteredMechanics(sorted);
 		}
 	}, [data]);
 

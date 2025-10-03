@@ -9,6 +9,7 @@ export const LIST_MECHANICS = gql`
 			phoneNumber
 			specialties
 			address
+			createdAt
 		}
 	}
 `;
